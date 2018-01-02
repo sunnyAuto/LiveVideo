@@ -39,11 +39,7 @@
         </activity>
         <activity android:name=".VideoViewActivity">
         </activity>
-        <activity
-            android:name=".BiliPlayerActivity"
-            android:configChanges="orientation|screenSize|keyboardHidden"
-            android:screenOrientation="portrait">
-        </activity>
+
         <activity
             android:name=".Main2Activity"
             android:screenOrientation="portrait"
