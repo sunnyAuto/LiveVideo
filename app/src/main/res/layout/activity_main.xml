@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.sunxiao.mathapplication.MainActivity">
+    <com.pili.pldroid.player.widget.PLVideoView
+        android:id="@+id/PLVideoView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        android:layout_gravity="center" />
+    <Button
+        android:id="@+id/btn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="本地视频"/>
+    <Button
+        android:id="@+id/btn1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="直播"
+        android:layout_below="@+id/btn"
+        android:layout_toEndOf="@+id/PLVideoView"
+        android:layout_marginTop="12dp"/>
+    <Button
+        android:id="@+id/btn2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="MP4网络视频"
+        android:layout_below="@+id/btn"
+        android:layout_toEndOf="@+id/PLVideoView"
+        android:layout_marginTop="75dp"/>
+    <EditText
+        android:id="@+id/input"
+        android:layout_below="@+id/btn2"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"/>
+</RelativeLayout>
