@@ -1,9 +1,11 @@
 package com.sunxiao.mathapplication;
 
+import android.content.pm.ShortcutManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.view.MotionEvent;
 import android.view.View;
 
 import com.sunxiao.mathapplication.View.AdImageViewVersion1;
@@ -20,6 +22,7 @@ public class AdActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_ad);
+        initShortCut();
 
         mRecyclerView = (RecyclerView) findViewById(R.id.id_recyclerview);
 
@@ -44,6 +47,7 @@ public class AdActivity extends AppCompatActivity {
                     holder.setVisible(R.id.id_tv_desc, true);
                     holder.setVisible(R.id.id_iv_ad, false);
                 }
+
             }
 
         });
@@ -64,6 +68,27 @@ public class AdActivity extends AppCompatActivity {
                 }
             }
         });
+        mRecyclerView.addOnItemTouchListener(new RecyclerView.OnItemTouchListener() {
+            @Override
+            public boolean onInterceptTouchEvent(RecyclerView rv, MotionEvent e) {
+                return false;
+
+            }
+
+            @Override
+            public void onTouchEvent(RecyclerView rv, MotionEvent e) {
+
+            }
+
+            @Override
+            public void onRequestDisallowInterceptTouchEvent(boolean disallowIntercept) {
+
+            }
+        });
+
+    }
+
+    private void initShortCut() {
 
     }
 

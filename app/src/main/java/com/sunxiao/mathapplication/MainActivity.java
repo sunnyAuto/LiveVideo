@@ -19,7 +19,7 @@ import com.pili.pldroid.player.widget.PLVideoView;
 
 public class MainActivity extends MPermissionsActivity {
     private PLVideoView plMediaPlayer ;
-    private Button btn ,btn1 ,btn2;
+    private Button btn ,btn1 ,btn2 , adBtn;
     private EditText input ;
     private int ki ;
 
@@ -76,6 +76,14 @@ public class MainActivity extends MPermissionsActivity {
             }
         });
         input  = (EditText) findViewById(R.id.input);
+        adBtn = (Button) findViewById(R.id.to_ad);
+        adBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this ,AdActivity.class);
+                startActivity(intent);
+            }
+        });
 
     }
 

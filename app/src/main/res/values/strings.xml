@@ -3,4 +3,11 @@
 
     <string name="dummy_button">Dummy Button</string>
     <string name="dummy_content">DUMMY\nCONTENT</string>
+    <string name="one">第一个0</string>
+    <string name="one_one">第一个1</string>
+    <string name="oneone_one">第一个2</string>
+    <string name="two">第er个</string>
+    <string name="two_two">第er个</string>
+    <string name="twotwo">第er个第er个</string>
+    <string name="twotwo_two">第一个</string>
 </resources>

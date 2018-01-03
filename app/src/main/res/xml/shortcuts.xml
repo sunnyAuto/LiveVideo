@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+    <shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutDisabledMessage="@string/one"
+        android:shortcutId="static"
+        android:shortcutLongLabel="@string/one_one"
+        android:shortcutShortLabel="@string/oneone_one">
+        <intent
+            android:action="android.intent.action.MAIN"
+            android:targetClass="com.sunxiao.mathapplication.AdActivity"
+            android:targetPackage="com.sunxiao.mathapplication" />
+    </shortcut>
+    <shortcut
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutDisabledMessage="@string/two"
+        android:shortcutId="static_2"
+        android:shortcutLongLabel="@string/two_two"
+        android:shortcutShortLabel="@string/twotwo">
+
+        <intent
+            android:action="android.intent.action.MAIN"
+            android:targetClass="com.sunxiao.mathapplication.Main2Activity"
+            android:targetPackage="com.sunxiao.mathapplication" />
+    </shortcut>
+</shortcuts>
