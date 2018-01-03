@@ -26,11 +26,7 @@
             android:theme="@style/FullscreenTheme">
         </activity>
         <activity android:name=".MainActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
 
-                <category android:name="android.intent.category.LAUNCHER"/>
-            </intent-filter>
         </activity>
         <activity
             android:name=".LivePlayActivity"
@@ -39,11 +35,10 @@
         </activity>
         <activity android:name=".VideoViewActivity">
         </activity>
-
         <activity
             android:name=".Main2Activity"
-            android:screenOrientation="portrait"
             android:configChanges="orientation|screenSize|keyboardHidden"
+            android:screenOrientation="portrait"
             android:theme="@style/Theme.AppCompat.NoActionBar"
             android:windowSoftInputMode="adjustPan">
         </activity>
@@ -52,6 +47,13 @@
             android:configChanges="orientation|keyboardHidden|screenSize">
         </activity>
         <activity android:name=".Main4Activity">
+        </activity>
+        <activity android:name=".AdActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
         </activity>
     </application>
 

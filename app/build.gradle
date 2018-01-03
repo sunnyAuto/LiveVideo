@@ -36,4 +36,5 @@ dependencies {
     compile 'com.android.support:recyclerview-v7:25.3.0'
     compile 'com.github.Rukey7:IjkPlayerView:1.0.4'
     testCompile 'junit:junit:4.12'
+    compile 'com.zhy:base-rvadapter:3.0.3'
 }

@@ -67,7 +67,7 @@ import java.util.TimerTask;
 import static android.content.ContentValues.TAG;
 import static java.security.AccessController.getContext;
 
-public class Main2Activity extends AppCompatActivity implements ViewTreeObserver.OnGlobalLayoutListener {
+public class Main2Activity extends AppCompatActivity implements ViewTreeObserver.OnGlobalLayoutListener ,PLMediaPlayer.OnInfoListener {
     private PLVideoTextureView vView ;
     private ImageView play ,full ,dan ,back ;
     //private String videoPath ;
@@ -260,6 +260,13 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
                     }
                 };
                 timer.schedule(task, 0, 500);
+            }
+        });
+        vView.setOnCompletionListener(new PLMediaPlayer.OnCompletionListener() {
+            @Override
+            public void onCompletion(PLMediaPlayer plMediaPlayer) {
+                Log.e("complete","complete");
+                //完成播放
             }
         });
         fullLayout = (RelativeLayout) findViewById(R.id.full_layout);
@@ -676,6 +683,13 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
 private int currentOrientation ;
     @Override
     public void onGlobalLayout() {
+
+    }
+
+    @Override
+    public boolean onInfo(PLMediaPlayer plMediaPlayer, int i, int i1) {
+        Log.e("info","info::"+i+":::i1::"+i1);
+        return false ;
 
     }
 
