@@ -162,11 +162,29 @@
             android:layout_alignEnd="@+id/ad_video"
             android:layout_marginEnd="23dp"
             android:layout_marginTop="23dp"/>
-        <RelativeLayout
+        <Button
+            android:id="@+id/start_flow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toRightOf="@+id/ad_video"
+            android:text="开启悬浮窗"/>
+        <Button
+            android:id="@+id/start_flow2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toRightOf="@+id/start_flow"
+            android:text="开启悬浮窗2"/>
+        <android.support.v4.widget.SwipeRefreshLayout
+            android:id="@+id/refresh"
             android:layout_width="match_parent"
-            android:layout_height="200dp">
+            android:layout_height="wrap_content">
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="100dp">
 
-        </RelativeLayout>
+            </RelativeLayout>
+        </android.support.v4.widget.SwipeRefreshLayout>
+
     </RelativeLayout>
     
 

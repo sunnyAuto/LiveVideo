@@ -1,10 +1,13 @@
 package com.sunxiao.mathapplication;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.Service;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.database.ContentObserver;
@@ -23,6 +26,9 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.provider.Settings;
+import android.support.annotation.NonNull;
+import android.support.annotation.RequiresApi;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
@@ -38,6 +44,7 @@ import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -45,11 +52,13 @@ import android.widget.PopupWindow;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.pili.pldroid.player.AVOptions;
 import com.pili.pldroid.player.PLMediaPlayer;
 import com.pili.pldroid.player.widget.PLVideoTextureView;
 import com.sunxiao.mathapplication.Utils.AnimationUtil;
+import com.sunxiao.mathapplication.Utils.PermissionUtils;
 import com.sunxiao.mathapplication.Utils.ScreenImproveUtils;
 import com.sunxiao.mathapplication.Utils.ScreenSwitchUtils;
 import com.sunxiao.mathapplication.View.BrightnessHelper;
@@ -58,6 +67,7 @@ import com.sunxiao.mathapplication.View.ShowChangeLayout;
 import com.sunxiao.mathapplication.View.VideoGestureRelativeLayout;
 import com.sunxiao.mathapplication.controller.DensityUtil;
 import com.sunxiao.mathapplication.controller.LoadingView;
+import com.sunxiao.mathapplication.manager.FloatWindowManager;
 
 import java.util.Formatter;
 import java.util.Locale;
@@ -72,15 +82,15 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
     private ImageView play ,full ,dan ,back ;
     //private String videoPath ;
     private LoadingView loading ;
-    private int codec ;
+    public static int codec ;
     private int landPort ;
     private RelativeLayout backLayout ,danLayout ,landLayout ,fullLayout;
     private VideoGestureRelativeLayout control ;
     private int isShow , clicked;
     private RelativeLayout btnLayout ,content;
     private int screenWidth ,screenHeight ;
-    private int videoKind ;
-    private String videoPath ;
+    public static int videoKind ;
+    public static String videoPath ;
     private SeekBar seekBar ;
     private Timer timer ;
     private TimerTask task ;
@@ -114,6 +124,9 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
     private float startX ,startY ,endX ,endY ;
     private ScreenSwitchUtils instance ;
     private MyOrientoinListener myOrientoinListener ;
+    private SwipeRefreshLayout swipeRefreshLayout ;
+    private Button startFlow , startFlow2;
+    public  static  long currentP ;
 
 
     @Override
@@ -154,6 +167,10 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
         initOption();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+    }
 
     private void initSeekBar() {
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -183,6 +200,7 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
         videoKind = intent.getIntExtra("kind",1);
         videoPath = intent.getStringExtra("path");
         vView.setVideoPath(videoPath);
+        vView.setDisplayAspectRatio(PLVideoTextureView.ASPECT_RATIO_PAVED_PARENT);
         if (videoKind == 1){
             isLive = true ;
             title.setText("能见直播，能源行业最权威的媒体");
@@ -267,6 +285,7 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
             public void onCompletion(PLMediaPlayer plMediaPlayer) {
                 Log.e("complete","complete");
                 //完成播放
+                play.setImageResource(R.drawable.jz_play_normal);
             }
         });
         fullLayout = (RelativeLayout) findViewById(R.id.full_layout);
@@ -293,7 +312,6 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
                     case MotionEvent.ACTION_DOWN :
                         //每次按下的时候更新当前亮度和音量，还有进度
                       //  oldProgress = newProgress;
-
                         oldProgress = seekBar.getProgress() ;
                        // Log.e("progress","oldProgress::"+oldProgress+":::sekbar::"+seekBar.getProgress()+"max:::"+seekBar.getMax());
                         oldVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
@@ -366,6 +384,13 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
                 return true ;
             }
         });
+
+        swipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.refresh);
+        startFlow = (Button) findViewById(R.id.start_flow);
+        startFlow.setOnClickListener(l);
+
+        startFlow2 = (Button) findViewById(R.id.start_flow2);
+        startFlow2.setOnClickListener(l);
 
     }
     /**
@@ -501,9 +526,17 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
                     videoKind = 2 ;
                     initOption();
                     break;
+                case R.id.start_flow :
+                    break;
+                case  R.id.start_flow2 :
+                    currentP = vView.getCurrentPosition() ;
+                    FloatWindowManager.getInstance().showFloatWindow(Main2Activity.this);
+                    break;
             }
         }
     };
+
+
     Handler handler=new Handler();
     Runnable runnable=new Runnable() {
         @Override
@@ -679,6 +712,7 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
             }
         }
     };
+
 
 private int currentOrientation ;
     @Override
