@@ -18,7 +18,7 @@
         <RelativeLayout
             android:id="@+id/player_layout"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="200dp">
 
             <com.pili.pldroid.player.widget.PLVideoTextureView
                 android:id="@+id/videoPlayer"
@@ -40,13 +40,14 @@
             android:id="@+id/control_layout"
             android:layout_width="match_parent"
             android:layout_height="200dp"
+            android:background="@color/colorAccent"
             >
 
             <RelativeLayout
                 android:id="@+id/back_layout"
                 android:layout_width="match_parent"
                 android:layout_height="30dp"
-                android:visibility="gone"
+                android:visibility="visible"
                 android:background="#a0000000">
 
                 <ImageView
@@ -95,7 +96,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_centerVertical="true"
-                    android:text="12:12"/>
+                    android:text="00:00"/>
                 <TextView
                     android:id="@+id/specte"
                     android:layout_width="wrap_content"
@@ -177,7 +178,8 @@
         <android.support.v4.widget.SwipeRefreshLayout
             android:id="@+id/refresh"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/ad_video">
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="100dp">

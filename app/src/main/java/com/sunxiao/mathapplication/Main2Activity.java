@@ -78,7 +78,7 @@ import static android.content.ContentValues.TAG;
 import static java.security.AccessController.getContext;
 
 public class Main2Activity extends AppCompatActivity implements ViewTreeObserver.OnGlobalLayoutListener ,PLMediaPlayer.OnInfoListener {
-    private PLVideoTextureView vView ;
+    public static  PLVideoTextureView vView ;
     private ImageView play ,full ,dan ,back ;
     //private String videoPath ;
     private LoadingView loading ;
@@ -530,7 +530,7 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
                     break;
                 case  R.id.start_flow2 :
                     currentP = vView.getCurrentPosition() ;
-                    FloatWindowManager.getInstance().showFloatWindow(Main2Activity.this);
+                    FloatWindowManager.getInstance().showFloatWindow(MyApplication.getInstance());
                     break;
             }
         }

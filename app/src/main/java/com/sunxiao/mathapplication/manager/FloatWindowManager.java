@@ -59,6 +59,7 @@ public class FloatWindowManager {
     private String videoPath ;
 
     private FloatWindowManager() {
+        Log.e("createSmall","floatWindowManager");
         mContext = MyApplication.getInstance();
         mWindowManager = (WindowManager) mContext.getSystemService(Context.WINDOW_SERVICE);
         mStatusBarHeight = SystemBarUtils.getStatusBarHeight(mContext);
@@ -77,14 +78,19 @@ public class FloatWindowManager {
         }
         if (isAddToWindow) return;
         try {
+            Log.e("createSmall","add"+"::count::");
             mWindowManager.addView(mSmallWindow, mSmallWindowParams);
+            initOption();
+            videoListener() ;
         } catch (Exception e) {
+            Log.e("createSmall","update");
             mWindowManager.updateViewLayout(mSmallWindow, mSmallWindowParams);
         }
         isAddToWindow = true;
     }
 
     public void removeFromWindow() {
+        Log.e("createSmall","remove"+"====isaddtoview::"+isAddToWindow);
         if (!isAddToWindow) return;
         mWindowManager.removeView(mSmallWindow);
         isAddToWindow = false;
@@ -92,10 +98,11 @@ public class FloatWindowManager {
     private static float lastX;
     private static float lastY;
     private void createSmallWindow() {
+        Log.e("createSmall","createSmall");
         mSmallWindow = LayoutInflater.from(mContext).inflate(R.layout.layout_float_window, null);
         fakeVideoView = (PLVideoTextureView) mSmallWindow.findViewById(R.id.video);
-        initOption();
-        videoListener() ;
+
+
         fakeVideoView.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
@@ -110,7 +117,6 @@ public class FloatWindowManager {
                         float moveY = event.getRawY() - lastY;
                         lastX = event.getRawX();
                         lastY = event.getRawY();
-
 
                         mSmallWindowParams.x += moveX;
                         mSmallWindowParams.y += moveY;
@@ -240,7 +246,7 @@ public class FloatWindowManager {
                 fakeVideoView.post(new Runnable() {
                     @Override
                     public void run() {
-                        fakeVideoView.seekTo(Main2Activity.currentP);
+                       // fakeVideoView.seekTo(Main2Activity.currentP);
                     }
                 });
 
