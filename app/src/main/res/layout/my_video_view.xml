@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+    <com.pili.pldroid.player.widget.PLVideoTextureView
+        android:id="@+id/video_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+    </com.pili.pldroid.player.widget.PLVideoTextureView>
+    <com.sunxiao.mathapplication.View.VideoGestureRelativeLayout
+        android:id="@+id/control_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/colorAccent"
+        >
+
+        <RelativeLayout
+            android:id="@+id/back_layout"
+            android:layout_width="match_parent"
+            android:layout_height="30dp"
+            android:visibility="visible"
+            android:background="#a0000000">
+
+            <ImageView
+                android:id="@+id/back"
+                android:layout_width="40dp"
+                android:layout_height="20dp"
+                android:layout_centerVertical="true"
+                android:src="@drawable/jz_back_normal"
+                />
+            <TextView
+                android:id="@+id/video_title"
+                android:layout_toRightOf="@id/back"
+                android:layout_centerVertical="true"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:id="@+id/dan_layout"
+            android:layout_width="30dp"
+            android:layout_height="match_parent"
+            android:layout_above="@+id/screen_full_layout"
+            android:layout_alignParentRight="true"
+            android:layout_below="@+id/back_layout"
+            android:visibility="gone"
+            android:background="#a0000000">
+
+            <ImageView
+                android:id="@+id/dan"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_centerInParent="true"
+                android:src="@drawable/jz_share_pressed"/>
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:id="@+id/screen_full_layout"
+            android:layout_width="match_parent"
+            android:layout_height="30dp"
+            android:background="#a0000000"
+            android:visibility="visible"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentStart="true">
+            <TextView
+                android:id="@+id/current_play_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:text="00:00"/>
+            <TextView
+                android:id="@+id/specte"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_toRightOf="@+id/current_play_time"
+                android:text="/"
+                android:layout_centerVertical="true"/>
+            <TextView
+                android:id="@+id/current_total_time"
+                android:layout_toRightOf="@+id/specte"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:text="35:35"/>
+            <SeekBar
+                android:id="@+id/seekBar1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_toRightOf="@+id/current_total_time"
+                android:layout_toLeftOf="@+id/full"/>
+
+            <ImageView
+                android:id="@+id/full"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_alignParentBottom="true"
+                android:layout_alignParentRight="true"
+                android:padding="5dp"
+                android:src="@drawable/jz_enlarge"/>
+        </RelativeLayout>
+
+
+        <ImageView
+            android:id="@+id/play_button"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_centerInParent="true"
+            android:src="@drawable/jz_click_play_selector"/>
+        <com.sunxiao.mathapplication.View.ShowChangeLayout
+            android:id="@+id/show_change"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:layout_centerInParent="true"/>
+    </com.sunxiao.mathapplication.View.VideoGestureRelativeLayout>
+
+</RelativeLayout>

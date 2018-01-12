@@ -42,9 +42,10 @@ public class MainActivity extends MPermissionsActivity {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(MainActivity.this ,Main2Activity.class);
-                String path  = Environment.getExternalStorageDirectory().getPath() + "/DCIM/Camera/VID_20171209_103210.mp4";
+                String path  = Environment.getExternalStorageDirectory().getPath() + "/DCIM/Camera/VID_20180109_224623.mp4";
                 intent.putExtra("path",path);
                 intent.putExtra("kind",2);
+            //    intent.putExtra("currentPosition","0");
                 startActivity(intent);
             }
         });
@@ -61,6 +62,7 @@ public class MainActivity extends MPermissionsActivity {
                     ki = Integer.parseInt(input.getText().toString());
                 }
                 intent.putExtra("kind",ki);
+               // intent.putExtra("currentPosition","0");
                 startActivity(intent);
             }
         });
@@ -72,6 +74,7 @@ public class MainActivity extends MPermissionsActivity {
                 String path = "http://oyoufznq9.bkt.clouddn.com/1neng";
                 intent.putExtra("path",path);
                 intent.putExtra("kind",2);
+              //  intent.putExtra("currentPosition","0");
                 startActivity(intent);
             }
         });

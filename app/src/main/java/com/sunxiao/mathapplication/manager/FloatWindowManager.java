@@ -4,9 +4,11 @@ import android.animation.AnimatorSet;
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.PixelFormat;
 import android.os.Build;
+import android.os.Handler;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.TypedValue;
@@ -53,13 +55,15 @@ public class FloatWindowManager {
     private int mNavigationBarHeight;
     private int dp12;
     private boolean isAddToWindow = false;
-    private int codec ;
-    private  PLVideoTextureView fakeVideoView ;
-    private int videoKind ;
-    private String videoPath ;
+    private int codec;
+    private PLVideoTextureView fakeVideoView;
+    private int videoKind;
+    private String videoPath;
+
+    private boolean notMove;
 
     private FloatWindowManager() {
-        Log.e("createSmall","floatWindowManager");
+        Log.e("createSmall", "floatWindowManager");
         mContext = MyApplication.getInstance();
         mWindowManager = (WindowManager) mContext.getSystemService(Context.WINDOW_SERVICE);
         mStatusBarHeight = SystemBarUtils.getStatusBarHeight(mContext);
@@ -78,41 +82,49 @@ public class FloatWindowManager {
         }
         if (isAddToWindow) return;
         try {
-            Log.e("createSmall","add"+"::count::");
+            Log.e("createSmall", "add" + "::count::");
             mWindowManager.addView(mSmallWindow, mSmallWindowParams);
             initOption();
-            videoListener() ;
+            videoListener();
         } catch (Exception e) {
-            Log.e("createSmall","update");
+            Log.e("createSmall", "update");
             mWindowManager.updateViewLayout(mSmallWindow, mSmallWindowParams);
         }
         isAddToWindow = true;
     }
 
     public void removeFromWindow() {
-        Log.e("createSmall","remove"+"====isaddtoview::"+isAddToWindow);
+        Log.e("createSmall", "remove" + "====isaddtoview::" + isAddToWindow);
+        fakeVideoView.stopPlayback();
         if (!isAddToWindow) return;
         mWindowManager.removeView(mSmallWindow);
         isAddToWindow = false;
     }
+
     private static float lastX;
     private static float lastY;
+
     private void createSmallWindow() {
-        Log.e("createSmall","createSmall");
+        Log.e("createSmall", "createSmall");
         mSmallWindow = LayoutInflater.from(mContext).inflate(R.layout.layout_float_window, null);
         fakeVideoView = (PLVideoTextureView) mSmallWindow.findViewById(R.id.video);
 
-
+        fakeVideoView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.e("onclick", "onClick");
+            }
+        });
         fakeVideoView.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
-                switch (event.getAction()){
-                    case MotionEvent.ACTION_DOWN :
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
                         lastX = event.getRawX();
                         lastY = event.getRawY();
-
+                        Log.e("onclick", "action_down");
                         return true;
-                    case MotionEvent.ACTION_MOVE :
+                    case MotionEvent.ACTION_MOVE:
                         float moveX = event.getRawX() - lastX;
                         float moveY = event.getRawY() - lastY;
                         lastX = event.getRawX();
@@ -123,9 +135,15 @@ public class FloatWindowManager {
                         if (isAddToWindow) {
                             mWindowManager.updateViewLayout(mSmallWindow, mSmallWindowParams);
                         }
-                        return  true ;
+                        Log.e("onclick", "action_moveX:" + moveX + ":::moveY::" + moveY);
+                        if (moveX == 0 && moveY == 0) {
+                            notMove = true;
+                        } else {
+                            notMove = false;
+                        }
+                        return true;
 
-                    case MotionEvent.ACTION_UP :
+                    case MotionEvent.ACTION_UP:
                         final int currentX = mSmallWindowParams.x;
                         final int currentY = mSmallWindowParams.y;
                         int dx = 0;
@@ -141,8 +159,8 @@ public class FloatWindowManager {
                             dy = -mSmallWindowParams.y;
                         }
                         if (dx == 0 && dy == 0) {
-                           // return;
-                            Log.e("dxdy","dx::"+dx+":::dy::"+dy);
+                            // return;
+                            Log.e("dxdy", "dx::" + dx + ":::dy::" + dy);
                         }
                         ValueAnimator x = ValueAnimator.ofInt(0, dx).setDuration(300);
                         x.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
@@ -165,6 +183,19 @@ public class FloatWindowManager {
                         animatorSet.play(x).with(y);
                         animatorSet.start();
 
+                        if (notMove) {
+                            //没有滑动，判断为单击事件
+                            Intent intent = new Intent(getInstance().mContext, Main2Activity.class);
+                            intent.putExtra("path", videoPath);
+                            intent.putExtra("kind", videoKind);
+                            intent.putExtra("currentPosition", "" + fakeVideoView.getCurrentPosition());
+                            Log.e("onclick", "click::" + fakeVideoView.getCurrentPosition());
+                            mContext.startActivity(intent);
+                            removeFromWindow();
+                        } else {
+                            Log.e("onclick", "move::" + notMove);
+                        }
+
                 }
                 return false;
             }
@@ -172,8 +203,8 @@ public class FloatWindowManager {
         mSmallWindow.findViewById(R.id.close).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                fakeVideoView.stopPlayback();
                 removeFromWindow();
+                Main2Activity.currentP = 0;
             }
         });
 
@@ -202,17 +233,18 @@ public class FloatWindowManager {
         mSmallWindowParams.format = PixelFormat.RGBA_8888;
         mSmallWindowParams.windowAnimations = android.R.style.Animation_Translucent;
     }
+
     private void initOption() {
-        videoKind = Main2Activity.videoKind ;
-        videoPath = Main2Activity.videoPath ;
-        codec = Main2Activity.codec ;
+        videoKind = Main2Activity.videoKind;
+        videoPath = Main2Activity.videoPath;
+        codec = Main2Activity.codec;
 
         AVOptions options = new AVOptions();
 
         // 解码方式:
-        // codec＝AVOptions.MEDIA_CODEC_HW_DECODE，硬解
-        // codec=AVOptions.MEDIA_CODEC_SW_DECODE, 软解
-        codec=AVOptions.MEDIA_CODEC_AUTO; // 硬解优先，失败后自动切换到软解
+        // codec＝AVOptions.MEDIA_CODEC_HW_DECODE;硬解
+         codec=AVOptions.MEDIA_CODEC_SW_DECODE;// 软解
+      //  codec = AVOptions.MEDIA_CODEC_AUTO; // 硬解优先，失败后自动切换到软解
         // 默认值是：MEDIA_CODEC_SW_DECODE
         options.setInteger(AVOptions.KEY_MEDIACODEC, codec);
         // 准备超时时间，包括创建资源、建立连接、请求码流等，单位是 ms
@@ -237,20 +269,46 @@ public class FloatWindowManager {
         fakeVideoView.setAVOptions(options);
         fakeVideoView.setVideoPath(videoPath);
     }
-    private void videoListener(){
+
+    private void videoListener() {
         fakeVideoView.setOnPreparedListener(new PLMediaPlayer.OnPreparedListener() {
             @Override
             public void onPrepared(PLMediaPlayer plMediaPlayer, int i) {
-                Log.e("current","current::"+Main2Activity.currentP);
+                Log.e("currentflow", "current::" + Main2Activity.currentP);
+               // fakeVideoView.start();
+                //跳至指定位置
                 fakeVideoView.start();
-                fakeVideoView.post(new Runnable() {
-                    @Override
-                    public void run() {
-                       // fakeVideoView.seekTo(Main2Activity.currentP);
-                    }
-                });
+                  //  fakeVideoView.seekTo(Main2Activity.currentP);
 
-              //
+            }
+        });
+        fakeVideoView.setOnInfoListener(new PLMediaPlayer.OnInfoListener() {
+            @Override
+            public boolean onInfo(PLMediaPlayer plMediaPlayer, int i, int i1) {
+                Log.e("inforflow","flowtINFOR::"+i);
+                switch (i){
+                    case 3 :
+
+                        break;
+                    case 10001 :
+                        fakeVideoView.seekTo(Main2Activity.currentP);
+                        break;
+                }
+                return false;
+            }
+        });
+        fakeVideoView.setOnErrorListener(new PLMediaPlayer.OnErrorListener() {
+            @Override
+            public boolean onError(PLMediaPlayer plMediaPlayer, int i) {
+                Log.e("inforflow","flowtERROR::"+i);
+
+                return false;
+            }
+        });
+        fakeVideoView.setOnSeekCompleteListener(new PLMediaPlayer.OnSeekCompleteListener() {
+            @Override
+            public void onSeekComplete(PLMediaPlayer plMediaPlayer) {
+
             }
         });
     }

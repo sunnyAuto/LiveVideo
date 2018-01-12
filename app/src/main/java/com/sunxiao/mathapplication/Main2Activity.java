@@ -1,64 +1,43 @@
 package com.sunxiao.mathapplication;
 
-import android.Manifest;
-import android.app.Activity;
 import android.app.Service;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.ServiceConnection;
 import android.content.pm.ActivityInfo;
-import android.content.res.Configuration;
 import android.database.ContentObserver;
 import android.graphics.Bitmap;
 import android.graphics.Color;
-import android.graphics.drawable.BitmapDrawable;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
-import android.hardware.SensorManager;
 import android.media.AudioManager;
 import android.media.MediaMetadataRetriever;
 import android.os.Build;
-import android.os.Environment;
+import android.os.Bundle;
 import android.os.Handler;
-import android.os.IBinder;
-import android.os.Message;
 import android.provider.Settings;
-import android.support.annotation.NonNull;
-import android.support.annotation.RequiresApi;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
-import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.OrientationEventListener;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.view.WindowManager;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.pili.pldroid.player.AVOptions;
 import com.pili.pldroid.player.PLMediaPlayer;
 import com.pili.pldroid.player.widget.PLVideoTextureView;
 import com.sunxiao.mathapplication.Utils.AnimationUtil;
-import com.sunxiao.mathapplication.Utils.PermissionUtils;
 import com.sunxiao.mathapplication.Utils.ScreenImproveUtils;
 import com.sunxiao.mathapplication.Utils.ScreenSwitchUtils;
 import com.sunxiao.mathapplication.View.BrightnessHelper;
@@ -74,11 +53,10 @@ import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import static android.content.ContentValues.TAG;
-import static java.security.AccessController.getContext;
-
-public class Main2Activity extends AppCompatActivity implements ViewTreeObserver.OnGlobalLayoutListener ,PLMediaPlayer.OnInfoListener {
+public class Main2Activity extends AppCompatActivity implements ViewTreeObserver.OnGlobalLayoutListener  {
     public static  PLVideoTextureView vView ;
+    private  PLMediaPlayer plMediaPlayer ;
+
     private ImageView play ,full ,dan ,back ;
     //private String videoPath ;
     private LoadingView loading ;
@@ -110,7 +88,7 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
     private ImageView ad_video ,ad_paly ;
     private String adVideoPath ;
     private boolean isLive ;
-    private int played ;
+    private int played = 0;
     private TextView totalTime , currentTime ;
 
 
@@ -127,6 +105,7 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
     private SwipeRefreshLayout swipeRefreshLayout ;
     private Button startFlow , startFlow2;
     public  static  long currentP ;
+    private ImageView iv ;
 
 
     @Override
@@ -178,9 +157,11 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
                 int postion = seekBar.getProgress();
-               // Log.e("seekbar","progress::"+seekBar.getProgress());
+                Log.e("seekbar","play::"+played);
                 if (!isLive) {
-                    vView.seekTo(postion);
+                    if (played == 1) {
+                        vView.seekTo(postion);
+                    }
                 }
             }
             @Override
@@ -208,15 +189,22 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
             isLive = false ;
             title.setText("mp4视频播放中。。。。");
         }
+        if (intent.getStringExtra("currentPosition")!=null){
+
+            currentP = Long.parseLong(intent.getStringExtra("currentPosition"));
+            Log.e("current","not null::"+currentP);
+        }else {
+            Log.e("current"," null");
+        }
     }
 
     private void initOption() {
         AVOptions options = new AVOptions();
 
         // 解码方式:
-        // codec＝AVOptions.MEDIA_CODEC_HW_DECODE，硬解
-        // codec=AVOptions.MEDIA_CODEC_SW_DECODE, 软解
-        codec=AVOptions.MEDIA_CODEC_AUTO; // 硬解优先，失败后自动切换到软解
+        // codec＝AVOptions.MEDIA_CODEC_HW_DECODE;//硬解
+         codec=AVOptions.MEDIA_CODEC_SW_DECODE;// 软解
+        //codec=AVOptions.MEDIA_CODEC_AUTO; // 硬解优先，失败后自动切换到软解
         // 默认值是：MEDIA_CODEC_SW_DECODE
         options.setInteger(AVOptions.KEY_MEDIACODEC, codec);
         // 准备超时时间，包括创建资源、建立连接、请求码流等，单位是 ms
@@ -228,6 +216,7 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
         // 最大的缓存大小，单位是 ms
         // 默认值是：2000
         options.setInteger(AVOptions.KEY_MAX_CACHE_BUFFER_DURATION, 2000);
+
         // 设置 DRM 密钥
         // byte[] key = {xxx, xxx, xxx, xxx, xxx ……};
         //  options.setByteArray(AVOptions.KEY_DRM_KEY, key);
@@ -238,11 +227,16 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
         options.setInteger(AVOptions.KEY_PREFER_FORMAT, videoKind);
         // 请在开始播放之前配置
         vView.setAVOptions(options);
+
     }
 
     private void initView() {
         vView = (PLVideoTextureView) findViewById(R.id.videoPlayer);
         vView.setOnClickListener(l);
+        /*ImageView iv = new ImageView(this);
+        iv.setImageResource(R.drawable.grsm);*/
+        iv = (ImageView) findViewById(R.id.iv);
+        vView.setCoverView(iv);
         play = (ImageView) findViewById(R.id.play_button);
         play.setOnClickListener(l);
         full = (ImageView) findViewById(R.id.full);
@@ -261,7 +255,7 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
             @Override
             public void onPrepared(PLMediaPlayer plMediaPlayer, int i) {
                 long max = vView.getDuration();
-                totalTime.setText(stringForTime(max));;
+                totalTime.setText(stringForTime(max));
                 seekBar.setMax((int) max);
                 timer = new Timer();
                 task = new TimerTask() {
@@ -278,14 +272,53 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
                     }
                 };
                 timer.schedule(task, 0, 500);
+                if (currentP != 0){
+
+                    if (!vView.isPlaying()){
+                        play.setImageResource(R.drawable.jz_pause_normal);
+                        vView.start();
+                        vView.seekTo(currentP);
+                        hideLayout();
+                        isShow = 1;
+                    }
+                }
+
             }
         });
         vView.setOnCompletionListener(new PLMediaPlayer.OnCompletionListener() {
             @Override
             public void onCompletion(PLMediaPlayer plMediaPlayer) {
-                Log.e("complete","complete");
+               // Log.e("complete","complete");
                 //完成播放
                 play.setImageResource(R.drawable.jz_play_normal);
+            }
+        });
+        vView.setOnSeekCompleteListener(new PLMediaPlayer.OnSeekCompleteListener() {
+            @Override
+            public void onSeekComplete(PLMediaPlayer plMediaPlayer) {
+                //Log.e("complete","seekComplete::::isPLaying::"+vView.isPlaying());
+                if (!vView.isPlaying()){
+                    play.setImageResource(R.drawable.jz_pause_normal);
+                    vView.start();
+                   // hideLayout();
+                    isShow = 1;
+                }
+
+
+            }
+        });
+        vView.setOnInfoListener(new PLMediaPlayer.OnInfoListener() {
+            @Override
+            public boolean onInfo(PLMediaPlayer plMediaPlayer, int i, int i1) {
+                Log.e("infor","infor:"+i);
+                return false;
+            }
+        });
+        vView.setOnErrorListener(new PLMediaPlayer.OnErrorListener() {
+            @Override
+            public boolean onError(PLMediaPlayer plMediaPlayer, int i) {
+                Log.e("2error","error:"+i);
+                return false;
             }
         });
         fullLayout = (RelativeLayout) findViewById(R.id.full_layout);
@@ -334,7 +367,6 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
                         break;
                     case MotionEvent.ACTION_MOVE:
                         //判断上下还是左右
-
                         if (Math.abs(event.getY() - startY) > 30 ){
                             isMoved = true ;
                             if (isLeft){
@@ -416,7 +448,6 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
             return mFormatter.format("%02d:%02d", minutes, seconds).toString();
         }
     }
-
     private StringBuilder mFormatBuilder = new StringBuilder();
     private Formatter mFormatter = new Formatter(mFormatBuilder, Locale.getDefault());
     private void controlLight(float distance){
@@ -456,29 +487,34 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
     private void controlProgress(float progressDistance){
         float offset = progressDistance;
         //根据移动的正负决定快进还是快退
-        if (offset > 0) {
-            scl.setImageResource(R.drawable.ff);
+        if (played == 1) {
+            if (offset > 0) {
+                scl.setImageResource(R.drawable.ff);
 
-            newProgress = (int) (oldProgress + offset/control.getWidth() * seekBar.getMax());
-            if (newProgress > seekBar.getMax()){
-                newProgress = seekBar.getMax();
+                newProgress = (int) (oldProgress + offset / control.getWidth() * seekBar.getMax());
+                if (newProgress > seekBar.getMax()) {
+                    newProgress = seekBar.getMax();
+                }
+            } else {
+                scl.setImageResource(R.drawable.fr);
+                newProgress = (int) (oldProgress + offset / control.getWidth() * seekBar.getMax());
+                if (newProgress < 0) {
+                    newProgress = 0;
+                }
             }
-        }else {
-            scl.setImageResource(R.drawable.fr);
-            newProgress = (int) (oldProgress + offset/control.getWidth() * seekBar.getMax());
-            if (newProgress < 0){
-                newProgress = 0;
-            }
+            scl.setProgress(newProgress / seekBar.getMax() * 100, 0);
+            scl.show();
+            vView.seekTo(newProgress);
         }
-        scl.setProgress(newProgress/seekBar.getMax()*100 , 0);
-        scl.show();
-        vView.seekTo(newProgress);
     }
     private View.OnClickListener l = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
             switch (v.getId()){
                 case R.id.play_button:
+                    if (played !=1){
+                        played = 1 ;
+                    }
                     if (vView.isPlaying()){
                         play.setImageResource(R.drawable.jz_play_normal);
                         vView.pause();
@@ -530,7 +566,8 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
                     break;
                 case  R.id.start_flow2 :
                     currentP = vView.getCurrentPosition() ;
-                    FloatWindowManager.getInstance().showFloatWindow(MyApplication.getInstance());
+                    FloatWindowManager.getInstance().showFloatWindow(Main2Activity.this);
+                    finish();
                     break;
             }
         }
@@ -693,11 +730,10 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        Log.e("onDesttror","destory");
         vView.stopPlayback();
         myOrientoinListener.disable();
         getContentResolver().unregisterContentObserver(contentObserver);
-
-
     }
     public ContentObserver contentObserver = new ContentObserver(new Handler()) {
         @Override
@@ -720,12 +756,7 @@ private int currentOrientation ;
 
     }
 
-    @Override
-    public boolean onInfo(PLMediaPlayer plMediaPlayer, int i, int i1) {
-        Log.e("info","info::"+i+":::i1::"+i1);
-        return false ;
 
-    }
 
     class MyOrientoinListener extends OrientationEventListener {
 

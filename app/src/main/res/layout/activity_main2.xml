@@ -34,13 +34,18 @@
                 android:layout_centerInParent="true"
                 android:visibility="gone"
                 />
+            <ImageView
+                android:id="@+id/iv"
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:scaleType="fitXY"
+                android:src="@drawable/grsm"/>
         </RelativeLayout>
 
         <com.sunxiao.mathapplication.View.VideoGestureRelativeLayout
             android:id="@+id/control_layout"
             android:layout_width="match_parent"
             android:layout_height="200dp"
-            android:background="@color/colorAccent"
             >
 
             <RelativeLayout
@@ -48,7 +53,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="30dp"
                 android:visibility="visible"
-                android:background="#a0000000">
+                android:background="#00000000">
 
                 <ImageView
                     android:id="@+id/back"
@@ -73,7 +78,7 @@
                 android:layout_alignParentRight="true"
                 android:layout_below="@+id/back_layout"
                 android:visibility="gone"
-                android:background="#a0000000">
+                android:background="#00000000">
 
                 <ImageView
                     android:id="@+id/dan"
@@ -87,7 +92,7 @@
                 android:id="@+id/screen_full_layout"
                 android:layout_width="match_parent"
                 android:layout_height="30dp"
-                android:background="#a0000000"
+                android:background="#00000000"
                 android:visibility="visible"
                 android:layout_alignParentBottom="true"
                 android:layout_alignParentStart="true">
@@ -175,6 +180,7 @@
             android:layout_height="wrap_content"
             android:layout_toRightOf="@+id/start_flow"
             android:text="开启悬浮窗2"/>
+
         <android.support.v4.widget.SwipeRefreshLayout
             android:id="@+id/refresh"
             android:layout_width="match_parent"
