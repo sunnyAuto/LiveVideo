@@ -13,6 +13,7 @@ import android.media.MediaMetadataRetriever;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Message;
 import android.provider.Settings;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
@@ -36,6 +37,7 @@ import android.widget.TextView;
 
 import com.pili.pldroid.player.AVOptions;
 import com.pili.pldroid.player.PLMediaPlayer;
+import com.pili.pldroid.player.PlayerState;
 import com.pili.pldroid.player.widget.PLVideoTextureView;
 import com.sunxiao.mathapplication.Utils.AnimationUtil;
 import com.sunxiao.mathapplication.Utils.ScreenImproveUtils;
@@ -47,6 +49,7 @@ import com.sunxiao.mathapplication.View.VideoGestureRelativeLayout;
 import com.sunxiao.mathapplication.controller.DensityUtil;
 import com.sunxiao.mathapplication.controller.LoadingView;
 import com.sunxiao.mathapplication.manager.FloatWindowManager;
+import com.sunxiao.mathapplication.manager.FloatWindowPermissionChecker;
 
 import java.util.Formatter;
 import java.util.Locale;
@@ -79,7 +82,6 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
     private float brightness = 1;
     private Window mWindow;
     private WindowManager.LayoutParams mLayoutParams;
-
     private ShowChangeLayout scl;
     private AudioManager mAudioManager;
     private boolean isLeft = false;
@@ -90,14 +92,7 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
     private boolean isLive ;
     private int played = 0;
     private TextView totalTime , currentTime ;
-
-
-    public static View commentView = null;
-    public static PopupWindow commentPopup = null;
     public static String result = "";
-    public static liveCommentResult liveCommentResult = null;
-    public static EditText popup_live_comment_edit;
-    public static TextView popup_live_comment_send;
     private CommentDialog commentDialog ;
     private float startX ,startY ,endX ,endY ;
     private ScreenSwitchUtils instance ;
@@ -106,6 +101,8 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
     private Button startFlow , startFlow2;
     public  static  long currentP ;
     private ImageView iv ;
+    private int firstPlay = 0 ;
+    private int stopStatus = 0;
 
 
     @Override
@@ -145,10 +142,18 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
         initIntent();
         initOption();
     }
+    private boolean isUser = false ;
 
     @Override
     protected void onResume() {
         super.onResume();
+        Log.e("MAin2Activity","onResume");
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Log.e("MAin2Activity","onStart");
     }
 
     private void initSeekBar() {
@@ -156,32 +161,63 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                int postion = seekBar.getProgress();
-                Log.e("seekbar","play::"+played);
-                if (!isLive) {
-                    if (played == 1) {
-                        vView.seekTo(postion);
-                    }
-                }
+               if (firstPlay == 1) {
+                   if (vView.isPlaying()) {
+                       vView.seekTo(seekBar.getProgress());
+                       updateCurrrent();
+                   } else {
+                       isUser = true;
+                       vView.start();
+                       play.setImageResource(R.drawable.jz_pause_normal);
+                       played = 1;
+                       updateCurrrent();
+
+                   }
+               }else {
+                  // notStartSeek();
+                   //Log.e("notstart","progress::"+seekBar.getProgress()+":::current::"+vView.getCurrentPosition());
+                   //currentP = seekBar.getProgress();
+                   //notStartSeek();
+               }
             }
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
-
+                if (timer != null) {
+                    timer.cancel();
+                    timer = null;
+                }
+                if (task != null) {
+                    task.cancel();
+                    task = null;
+                }
             }
             @Override
-            public void onProgressChanged(SeekBar seekBar, int progress,
+            public void onProgressChanged(SeekBar seekBar, final int progress,
                                           boolean fromUser) {
+
+               if (!fromUser){
+                   return;
+               }else {
+                   currentTime.post(new Runnable() {
+                       @Override
+                       public void run() {
+                           currentTime.setText(stringForTime(progress));
+                       }
+                   });
+               }
+
 
             }
         });
     }
+
 
     private void initIntent() {
         Intent intent = getIntent();
         videoKind = intent.getIntExtra("kind",1);
         videoPath = intent.getStringExtra("path");
         vView.setVideoPath(videoPath);
-        vView.setDisplayAspectRatio(PLVideoTextureView.ASPECT_RATIO_PAVED_PARENT);
+        vView.setDisplayAspectRatio(PLVideoTextureView.ASPECT_RATIO_FIT_PARENT);
         if (videoKind == 1){
             isLive = true ;
             title.setText("能见直播，能源行业最权威的媒体");
@@ -192,9 +228,9 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
         if (intent.getStringExtra("currentPosition")!=null){
 
             currentP = Long.parseLong(intent.getStringExtra("currentPosition"));
-            Log.e("current","not null::"+currentP);
+
         }else {
-            Log.e("current"," null");
+
         }
     }
 
@@ -254,32 +290,29 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
         vView.setOnPreparedListener(new PLMediaPlayer.OnPreparedListener() {
             @Override
             public void onPrepared(PLMediaPlayer plMediaPlayer, int i) {
+                //视频开启播放后, 触发的监听器
+                Log.e("PPPPP","PREPAREED");
                 long max = vView.getDuration();
                 totalTime.setText(stringForTime(max));
                 seekBar.setMax((int) max);
-                timer = new Timer();
-                task = new TimerTask() {
-                    @Override
-                    public void run() {
-                        seekBar.setProgress((int) vView.getCurrentPosition());
-                        currentTime.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                currentTime.setText(stringForTime(vView.getCurrentPosition()));
-                            }
-                        });
 
-                    }
-                };
-                timer.schedule(task, 0, 500);
                 if (currentP != 0){
-
+                    firstPlay = 1 ;
                     if (!vView.isPlaying()){
                         play.setImageResource(R.drawable.jz_pause_normal);
                         vView.start();
-                        vView.seekTo(currentP);
+                        played = 1 ;
+                        new Handler().postDelayed(new Runnable(){
+                            public void run() {
+                                //execute the task
+                                Log.e("handler","延迟执行");
+                                vView.seekTo(currentP);
+                            }
+                        }, 500);
+                        updateCurrrent();
+
                         hideLayout();
-                        isShow = 1;
+                      //  isShow = 1;
                     }
                 }
 
@@ -296,28 +329,27 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
         vView.setOnSeekCompleteListener(new PLMediaPlayer.OnSeekCompleteListener() {
             @Override
             public void onSeekComplete(PLMediaPlayer plMediaPlayer) {
-                //Log.e("complete","seekComplete::::isPLaying::"+vView.isPlaying());
-                if (!vView.isPlaying()){
-                    play.setImageResource(R.drawable.jz_pause_normal);
-                    vView.start();
-                   // hideLayout();
-                    isShow = 1;
-                }
-
 
             }
         });
         vView.setOnInfoListener(new PLMediaPlayer.OnInfoListener() {
             @Override
             public boolean onInfo(PLMediaPlayer plMediaPlayer, int i, int i1) {
-                Log.e("infor","infor:"+i);
+                Log.e("INfor","plMediaPlay::"+plMediaPlayer.getPlayerState()+":::i="+i+":::i1="+i1);
+                Log.e("PPPPP","PROGRESS::"+seekBar.getProgress());
+                if (plMediaPlayer.getPlayerState() == PlayerState.PLAYING){
+                    if (isUser == true) {
+                        vView.seekTo(seekBar.getProgress());
+                        isUser = false;
+                    }
+                }
                 return false;
             }
         });
         vView.setOnErrorListener(new PLMediaPlayer.OnErrorListener() {
             @Override
             public boolean onError(PLMediaPlayer plMediaPlayer, int i) {
-                Log.e("2error","error:"+i);
+                Log.e("INfor","plMediaPLayer:"+plMediaPlayer.getPlayerState()+":::ERROR:"+i);
                 return false;
             }
         });
@@ -341,89 +373,116 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
         control.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
-                switch (event.getAction()){
-                    case MotionEvent.ACTION_DOWN :
-                        //每次按下的时候更新当前亮度和音量，还有进度
-                      //  oldProgress = newProgress;
-                        oldProgress = seekBar.getProgress() ;
-                       // Log.e("progress","oldProgress::"+oldProgress+":::sekbar::"+seekBar.getProgress()+"max:::"+seekBar.getMax());
-                        oldVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-                        brightness = mLayoutParams.screenBrightness;
-                        if (brightness == -1){
-                            //一开始是默认亮度的时候，获取系统亮度，计算比例值
-                            brightness = mBrightnessHelper.getBrightness() / 255f;
-                        }
+                if (firstPlay == 1) {
+                    switch (event.getAction()) {
+                        case MotionEvent.ACTION_DOWN:
+                            //每次按下的时候更新当前亮度和音量，还有进度
+                            //  oldProgress = newProgress;
+                            oldProgress = seekBar.getProgress();
+                            // Log.e("progress","oldProgress::"+oldProgress+":::sekbar::"+seekBar.getProgress()+"max:::"+seekBar.getMax());
+                            oldVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+                            brightness = mLayoutParams.screenBrightness;
+                            if (brightness == -1) {
+                                //一开始是默认亮度的时候，获取系统亮度，计算比例值
+                                brightness = mBrightnessHelper.getBrightness() / 255f;
+                            }
 
-                        startX = event.getX();
-                        startY = event.getY();
-                        if (startX<control.getWidth()/2){
-                            //手势布局左侧
-                            isLeft = true ;
-                        }else {
-                            //手势布局右侧
-                            isLeft = false ;
-                        }
-
-                        break;
-                    case MotionEvent.ACTION_MOVE:
-                        //判断上下还是左右
-                        if (Math.abs(event.getY() - startY) > 30 ){
-                            isMoved = true ;
-                            if (isLeft){
-                                //调亮度
-                                if ((event.getY() - startY) > 0){
-                                    //升高
-                                    controlLight( startY - event.getY() );
-                                }else {
-                                    //降低
-                                    controlLight(startY - event.getY());
+                            startX = event.getX();
+                            startY = event.getY();
+                            if (startX < control.getWidth() / 2) {
+                                //手势布局左侧
+                                isLeft = true;
+                            } else {
+                                //手势布局右侧
+                                isLeft = false;
+                            }
+                            break;
+                        case MotionEvent.ACTION_MOVE:
+                            //判断上下还是左右
+                            if (Math.abs(event.getY() - startY) > 30) {
+                                isMoved = true;
+                                if (isLeft) {
+                                    //调亮度
+                                    if ((event.getY() - startY) > 0) {
+                                        //升高
+                                        controlLight(startY - event.getY());
+                                    } else {
+                                        //降低
+                                        controlLight(startY - event.getY());
+                                    }
+                                } else {
+                                    //调声音
+                                    if ((event.getY() - startY) > 0) {
+                                        //升高
+                                        controlVoice(startY - event.getY());
+                                    } else {
+                                        //降低
+                                        controlVoice(startY - event.getY());
+                                    }
                                 }
-                            }else {
-                                //调声音
-                                if ((event.getY() - startY) > 0){
-                                    //升高
-                                    controlVoice(startY - event.getY());
-                                }else {
-                                    //降低
-                                    controlVoice(startY - event.getY());
+                            } else {
+                                if (isLive == false) {
+                                    if (Math.abs(event.getX() - startX) > 10) {
+                                        isMoved = true;
+                                        controlProgress(event.getX() - startX);
+                                    }
                                 }
                             }
-                        }else {
-                            if (isLive == false) {
-                                if (Math.abs(event.getX() - startX) > 10) {
-                                    isMoved = true;
-                                    controlProgress(event.getX() - startX);
+                            break;
+                        case MotionEvent.ACTION_UP:
+                            if (isMoved == false) {
+                                if (isShow == 0) {
+                                    hideLayout();
+                                    handler.removeCallbacks(runnable);
+                                } else {
+                                    //隐藏
+                                    showLayout();
+                                    handler.postDelayed(runnable, 3000);//每三秒执行一次runnable.
                                 }
+                            } else {
+                                isMoved = false;
                             }
-                        }
-
-                        break;
-                    case  MotionEvent.ACTION_UP :
-                        if (isMoved == false){
-                            if (isShow == 0){
-                                hideLayout();
-                                handler.removeCallbacks(runnable);
-                            }else {
-                                //隐藏
-                                showLayout();
-                                handler.postDelayed(runnable, 3000);//每两秒执行一次runnable.
-                            }
-                        }else {
-                            isMoved = false ;
-                        }
-                        break ;
+                            break;
+                    }
+                    return true;
+            }else {
+                    return false ;
                 }
-                return true ;
-            }
+                }
         });
 
-        swipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.refresh);
+        //swipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.refresh);
         startFlow = (Button) findViewById(R.id.start_flow);
         startFlow.setOnClickListener(l);
 
         startFlow2 = (Button) findViewById(R.id.start_flow2);
         startFlow2.setOnClickListener(l);
+    }
+    private void updateCurrrent(){
+        if (timer != null) {
+            timer.cancel();
+            timer = null;
+        }
+        if (task != null) {
+            task.cancel();
+            task = null;
+        }
+        timer = new Timer();
+        task = new TimerTask() {
+            @Override
+            public void run() {
+                Log.e("timertask","updatecu");
+                seekBar.setProgress((int) vView.getCurrentPosition());
+                currentTime.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        currentTime.setText(stringForTime(vView.getCurrentPosition()));
+                    }
+                });
 
+            }
+        };
+        timer.schedule(task, 0, 1000);
     }
     /**
      * 把毫秒转换成：1:20:30这里形式
@@ -433,14 +492,8 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
     public String stringForTime(long timeMs) {
         long totalSeconds = timeMs / 1000;
         long seconds = totalSeconds % 60;
-
-
         long minutes = (totalSeconds / 60) % 60;
-
-
         long hours = totalSeconds / 3600;
-
-
         mFormatBuilder.setLength(0);
         if (hours > 0) {
             return mFormatter.format("%d:%02d:%02d", hours, minutes, seconds).toString();
@@ -468,7 +521,6 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
     private void controlVoice(float voiceDistance){
 
         int value = control.getHeight()/maxVolume ;
-
         int newVolume = (int) ((voiceDistance)/value + oldVolume);
         mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC,newVolume,AudioManager.FLAG_PLAY_SOUND);
 
@@ -512,17 +564,20 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
         public void onClick(View v) {
             switch (v.getId()){
                 case R.id.play_button:
-                    if (played !=1){
-                        played = 1 ;
-                    }
                     if (vView.isPlaying()){
                         play.setImageResource(R.drawable.jz_play_normal);
                         vView.pause();
+                        played = 0 ;
                     }else {
+                        if (firstPlay == 0){
+                            firstPlay = 1;
+                        }
                         play.setImageResource(R.drawable.jz_pause_normal);
+                        played = 1 ;
+                        updateCurrrent();
                         vView.start();
                         hideLayout();
-                        isShow = 1;
+                      //  isShow = 1;
                     }
                     break;
                 case R.id.dan :
@@ -565,14 +620,18 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
                 case R.id.start_flow :
                     break;
                 case  R.id.start_flow2 :
-                    currentP = vView.getCurrentPosition() ;
-                    FloatWindowManager.getInstance().showFloatWindow(Main2Activity.this);
-                    finish();
+                    if (!FloatWindowPermissionChecker.checkFloatWindowPermission()) {
+                        FloatWindowPermissionChecker.askForFloatWindowPermission(Main2Activity.this);
+                        return;
+                    }else {
+                        currentP = vView.getCurrentPosition() ;
+                        FloatWindowManager.getInstance().showFloatWindow(Main2Activity.this);
+                        finish();
+                    }
                     break;
             }
         }
     };
-
 
     Handler handler=new Handler();
     Runnable runnable=new Runnable() {
@@ -632,7 +691,7 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
      *
      */
     private void fullScreen(int REVERSE){
-        Log.e("orientation","stretch::"+stretch_flag);
+        Log.e("orientation","stretch::"+stretch_flag+"width::"+screenWidth+"::::heght::"+screenHeight);
         if (stretch_flag) {
 
             stretch_flag = false;
@@ -651,6 +710,7 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
             params.height = screenWidth ;
             vView.setLayoutParams(params);
             control.setLayoutParams(params);
+            iv.setLayoutParams(params);
             if (selfChange == 1){
                 currentOrientation = 270 ;
                 selfChange = 0 ;
@@ -670,6 +730,7 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
             params.height = DensityUtil.dip2px(Main2Activity.this ,200);
             vView.setLayoutParams(params);
             control.setLayoutParams(params);
+            iv.setLayoutParams(params);
 
             if (selfChange == 1){
                 currentOrientation = 0 ;
@@ -730,11 +791,42 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        Log.e("onDesttror","destory");
+        Log.e("MAin2Activity","onDestory");
         vView.stopPlayback();
         myOrientoinListener.disable();
         getContentResolver().unregisterContentObserver(contentObserver);
+        currentP = 0 ;
+        if (timer != null) {
+            timer.cancel();
+            timer = null;
+        }
+        if (task != null) {
+            task.cancel();
+            task = null;
+        }
     }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+       Log.e("MAin2Activity","onStop");
+        if (vView.isPlaying()) {
+            vView.pause();
+            stopStatus = 1 ;
+        }else {
+            stopStatus = 0 ;
+        }
+    }
+
+    @Override
+    protected void onRestart() {
+        super.onRestart();
+        Log.e("MAin2Activity","onRestart::"+stopStatus);
+        if (stopStatus == 1) {
+            vView.start();
+        }
+    }
+
     public ContentObserver contentObserver = new ContentObserver(new Handler()) {
         @Override
         public void onChange(boolean selfChange) {
@@ -750,7 +842,7 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
     };
 
 
-private int currentOrientation ;
+    private int currentOrientation ;
     @Override
     public void onGlobalLayout() {
 
@@ -820,7 +912,6 @@ private int currentOrientation ;
         media.setDataSource(path);
         return media.getFrameAtTime();
     }
-
 
 
 }

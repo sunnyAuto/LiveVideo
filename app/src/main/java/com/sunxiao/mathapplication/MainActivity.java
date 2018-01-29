@@ -19,7 +19,7 @@ import com.pili.pldroid.player.widget.PLVideoView;
 
 public class MainActivity extends MPermissionsActivity {
     private PLVideoView plMediaPlayer ;
-    private Button btn ,btn1 ,btn2 , adBtn;
+    private Button btn ,btn1 ,btn2 , adBtn , main4Btn ;
     private EditText input ;
     private int ki ;
 
@@ -88,6 +88,15 @@ public class MainActivity extends MPermissionsActivity {
             }
         });
 
+        main4Btn = (Button) findViewById(R.id.to_main4);
+        main4Btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this , Main4Activity.class);
+                intent.putExtra("url",Environment.getExternalStorageDirectory().getPath() + "/DCIM/Camera/VID_20180109_224623.mp4");
+                startActivity(intent);
+            }
+        });
     }
 
 

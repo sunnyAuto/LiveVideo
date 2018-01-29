@@ -18,7 +18,17 @@ android {
         }
     }
 }
-
+//保证一些三方的支持版本不兼容问题
+configurations.all {
+    resolutionStrategy.eachDependency { DependencyResolveDetails details ->
+        def requested = details.requested
+        if (requested.group == 'com.android.support') {
+            if (!requested.name.startsWith("multidex")) {
+                details.useVersion '25.3.0'
+            }
+        }
+    }
+}
 
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
@@ -34,7 +44,15 @@ dependencies {
     compile 'com.github.ctiao:DanmakuFlameMaster:0.5.3'
     compile 'cn.jzvd:jiaozivideoplayer:6.2.3'
     compile 'com.android.support:recyclerview-v7:25.3.0'
-    compile 'com.github.Rukey7:IjkPlayerView:1.0.4'
     testCompile 'junit:junit:4.12'
     compile 'com.zhy:base-rvadapter:3.0.3'
+
+    //jwplayer
+    compile 'com.longtailvideo.jwplayer:jwplayer-core:+'
+    compile 'com.longtailvideo.jwplayer:jwplayer-common:+'
+    compile 'com.longtailvideo.jwplayer:jwplayer-ima:+'        // Only required if using IMA features
+    compile 'com.longtailvideo.jwplayer:jwplayer-chromecast:+' // Only required if using Chromecast
+    compile project(':superplayerlibrary')
+
+
 }

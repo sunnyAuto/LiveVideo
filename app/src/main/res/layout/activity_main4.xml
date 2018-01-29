@@ -9,26 +9,10 @@
     tools:layout_editor_absoluteY="81dp"
     tools:layout_editor_absoluteX="0dp">
 
-    <TextView
-        android:id="@+id/textView"
-        android:layout_width="232dp"
-        android:layout_height="495dp"
-        android:text="TextView"
-        android:layout_marginStart="93dp"
-        tools:layout_constraintRight_creator="1"
-        android:layout_marginEnd="95dp"
-        app:layout_constraintRight_toRightOf="@+id/textView2"
-        app:layout_constraintBaseline_toBaselineOf="@+id/textView2"
-        tools:layout_constraintBaseline_creator="1"
-        tools:layout_constraintLeft_creator="1"
-        app:layout_constraintLeft_toLeftOf="parent"/>
-
-   <com.pili.pldroid.player.widget.PLVideoTextureView
-       android:id="@+id/video"
-       android:layout_width="match_parent"
-       android:layout_height="match_parent">
-
-   </com.pili.pldroid.player.widget.PLVideoTextureView>
+<com.superplayer.library.SuperPlayer
+    android:id="@+id/player_layout"
+    android:layout_width="match_parent"
+    android:layout_height="250dp"/>
 
 
 </RelativeLayout>

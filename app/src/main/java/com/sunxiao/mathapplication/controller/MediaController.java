@@ -387,6 +387,7 @@ public class MediaController extends FrameLayout implements IMediaController {
             mPlayer.pause();
         else
             mPlayer.start();
+        //mPlayer.seekTo(10000);
         updatePausePlay();
     }
 
@@ -404,7 +405,6 @@ public class MediaController extends FrameLayout implements IMediaController {
             if (!fromuser) {
                 return;
             }
-
 
             final long newposition = (long) (mDuration * progress) / 1000;
             String time = generateTime(newposition);
@@ -476,6 +476,7 @@ public class MediaController extends FrameLayout implements IMediaController {
         }
         initControllerView(mRoot);
     }
+
 
     @Override
     public void setMediaPlayer(MediaPlayerControl player) {

@@ -238,7 +238,6 @@ public class FloatWindowManager {
         videoKind = Main2Activity.videoKind;
         videoPath = Main2Activity.videoPath;
         codec = Main2Activity.codec;
-
         AVOptions options = new AVOptions();
 
         // 解码方式:
@@ -278,6 +277,13 @@ public class FloatWindowManager {
                // fakeVideoView.start();
                 //跳至指定位置
                 fakeVideoView.start();
+                new Handler().postDelayed(new Runnable(){
+                    public void run() {
+                        //execute the task
+                        Log.e("handler","延迟执行");
+                        fakeVideoView.seekTo(Main2Activity.currentP);
+                    }
+                }, 1000);
                   //  fakeVideoView.seekTo(Main2Activity.currentP);
 
             }
@@ -291,7 +297,7 @@ public class FloatWindowManager {
 
                         break;
                     case 10001 :
-                        fakeVideoView.seekTo(Main2Activity.currentP);
+                       // fakeVideoView.seekTo(Main2Activity.currentP);
                         break;
                 }
                 return false;
