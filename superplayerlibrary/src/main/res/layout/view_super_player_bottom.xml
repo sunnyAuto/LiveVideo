@@ -5,7 +5,7 @@
     android:layout_height="45dp"
     android:layout_alignParentBottom="true"
     android:background="#88000000"
-    android:visibility="gone" >
+    android:visibility="visible" >
 
     <LinearLayout
         android:id="@+id/view_jky_player_left"
@@ -63,7 +63,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerVertical="true"
-        android:layout_toLeftOf="@+id/view_jky_player_fullscreen"
+        android:layout_toLeftOf="@+id/switch_clarity_button"
         android:text="10:10"
         android:textColor="@android:color/white"
         android:textSize="12sp" />
@@ -76,5 +76,14 @@
         android:layout_centerVertical="true"
         android:padding="8dp"
         android:src="@drawable/ic_enlarge" />
+    <TextView
+        android:id="@+id/switch_clarity_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toLeftOf="@+id/view_jky_player_fullscreen"
+        android:layout_centerVertical="true"
+        android:textSize="14sp"
+        android:text="高清"
+        android:padding="8dp"/>
 
 </RelativeLayout>

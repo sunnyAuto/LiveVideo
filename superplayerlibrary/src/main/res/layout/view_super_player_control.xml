@@ -8,7 +8,8 @@
     <!-- bottom -->
 
     <include layout="@layout/view_super_player_bottom" />
-
+    <!-- top -->
     <include layout="@layout/view_super_player_top" />
-
+    <!-- switch clarity-->
+    <include layout="@layout/switch_clarity_layout"/>
 </RelativeLayout>

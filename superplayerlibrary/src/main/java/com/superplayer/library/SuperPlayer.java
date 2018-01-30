@@ -32,7 +32,11 @@ import android.widget.TextView;
 import com.superplayer.library.mediaplayer.IRenderView;
 import com.superplayer.library.mediaplayer.IjkVideoView;
 import com.superplayer.library.utils.NetUtils;
+import com.superplayer.library.utils.ShareInterface;
 import com.superplayer.library.utils.SuperPlayerUtils;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import tv.danmaku.ijk.media.player.IMediaPlayer;
 import tv.danmaku.ijk.media.player.IjkMediaPlayer;
@@ -138,35 +142,7 @@ public class SuperPlayer extends RelativeLayout{
 		initView();
 	}
 
-	/**
-	 * 相应点击事件
-	 */
-	private final View.OnClickListener onClickListener = new View.OnClickListener() {
-		@Override
-		public void onClick(View v) {
-			if (v.getId() == R.id.view_jky_player_fullscreen) {
-				toggleFullScreen();
-			} else if (v.getId() == R.id.app_video_play) {
-				doPauseResume();
-				show(defaultTimeout);
-			} else if (v.getId() == R.id.view_jky_player_center_play) {
-				// videoView.seekTo(0);
-				// videoView.start();
-				doPauseResume();
-				show(defaultTimeout);
-			} else if (v.getId() == R.id.app_video_finish) {
-				if (!fullScreenOnly && !portrait) {
-					activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-				} else {
-					activity.finish();
-				}
-			} else if (v.getId() == R.id.view_jky_player_tv_continue) {
-				isNetListener = false;// 取消网络的监听
-				$.id(R.id.view_jky_player_tip_control).gone();
-				play(url, currentPosition);
-			}
-		}
-	};
+
 	private boolean isShowing;
 	private boolean portrait;
 	private float brightness = -1;
@@ -194,6 +170,12 @@ public class SuperPlayer extends RelativeLayout{
 
 	private int currentPosition;
 	private boolean fullScreenOnly;
+
+	private long duration;
+	private boolean instantSeeking;
+	private boolean isDragging;
+
+	private List<ClarityBean> list = new ArrayList<>();
 
 	public SuperPlayer setTitle(CharSequence title) {
 		$.id(R.id.app_video_title).text(title);
@@ -299,9 +281,7 @@ public class SuperPlayer extends RelativeLayout{
 		}
 	}
 
-	private long duration;
-	private boolean instantSeeking;
-	private boolean isDragging;
+
 	private final SeekBar.OnSeekBarChangeListener mSeekListener = new SeekBar.OnSeekBarChangeListener() {
 		@Override
 		public void onProgressChanged(SeekBar seekBar, int progress,
@@ -462,6 +442,16 @@ public class SuperPlayer extends RelativeLayout{
 		$.id(R.id.view_jky_player_center_play).clicked(onClickListener);
 		$.id(R.id.view_jky_player_tv_continue).clicked(onClickListener);
 
+		//切换清晰度
+		$.id(R.id.switch_clarity_button).clicked(onClickListener);
+		//显示清晰度的类型，选择进行切换
+		$.id(R.id.switch_layout).clicked(onClickListener);
+		$.id(R.id.low_clarity).clicked(onClickListener);
+		$.id(R.id.middle_clarity).clicked(onClickListener);
+		$.id(R.id.high_clarity).clicked(onClickListener);
+		//分享
+		$.id(R.id.view_jky_player_iv_share).clicked(onClickListener);
+
 		audioManager = (AudioManager) activity
 				.getSystemService(Context.AUDIO_SERVICE);
 		mMaxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
@@ -519,6 +509,65 @@ public class SuperPlayer extends RelativeLayout{
 			showStatus(activity.getResources().getString(R.string.not_support),
 					"重试");
 		}
+	}
+
+	/**
+	 * 相应点击事件
+	 */
+	private final View.OnClickListener onClickListener = new View.OnClickListener() {
+		@Override
+		public void onClick(View v) {
+			if (v.getId() == R.id.view_jky_player_fullscreen) {
+				toggleFullScreen();
+			} else if (v.getId() == R.id.app_video_play) {
+				doPauseResume();
+				show(defaultTimeout);
+			} else if (v.getId() == R.id.view_jky_player_center_play) {
+				// videoView.seekTo(0);
+				// videoView.start();
+				doPauseResume();
+				show(defaultTimeout);
+			} else if (v.getId() == R.id.app_video_finish) {
+				if (!fullScreenOnly && !portrait) {
+					activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+				} else {
+						activity.finish();
+				}
+			} else if (v.getId() == R.id.view_jky_player_tv_continue) {
+				isNetListener = false;// 取消网络的监听
+				$.id(R.id.view_jky_player_tip_control).gone();
+				play(url, currentPosition);
+			}else if (v.getId() == R.id.switch_clarity_button){//显示切换视频清晰度布局
+				switchClarity(true);
+			}else if (v.getId() == R.id.low_clarity){
+				//切换当前清晰度的视频地址，隐藏选择布局
+				playSwitch(list.get(0).getVideoPath());
+				switchClarity(false);
+			}else if (v.getId() == R.id.middle_clarity){
+				//切换当前清晰度的视频地址，隐藏选择布局
+				playSwitch(list.get(1).getVideoPath());
+				switchClarity(false);
+
+			}else if (v.getId() == R.id.high_clarity){
+				//切换当前清晰度的视频地址，隐藏选择布局
+				playSwitch(list.get(2).getVideoPath());
+				switchClarity(false);
+			}else if (v.getId() == R.id.view_jky_player_iv_share){
+				//分享
+				shareInterface.onClick();
+			}
+		}
+	};
+	private ShareInterface shareInterface = new ShareInterface() {
+		@Override
+		public void onClick() {
+			Log.e("share","player    shareeeee");
+		}
+	};
+
+	private void switchClarity(Boolean show){//显示切换清晰度布局
+
+		$.id(R.id.switch_layout).visibility(show ? View.VISIBLE : View.GONE);
 	}
 
 	/**
@@ -1378,6 +1427,15 @@ public class SuperPlayer extends RelativeLayout{
 	public SuperPlayer setLive(boolean isLive) {
 		this.isLive = isLive;
 		return this;
+	}
+
+	/**
+	 * 获取到不同清晰度的数据源
+	 * @return
+	 */
+	public SuperPlayer setDiffentClarity(List<ClarityBean>list){
+		this.list = list ;
+		return this ;
 	}
 
 	public SuperPlayer toggleAspectRatio() {

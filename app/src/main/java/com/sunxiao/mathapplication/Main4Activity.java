@@ -4,15 +4,23 @@ import android.content.res.Configuration;
 import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import com.superplayer.library.SuperPlayer;
+import android.util.Log;
 
-public class Main4Activity extends AppCompatActivity implements  SuperPlayer.OnNetChangeListener {
+import com.superplayer.library.SuperPlayer;
+import com.superplayer.library.utils.ShareInterface;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class Main4Activity extends AppCompatActivity implements  SuperPlayer.OnNetChangeListener , ShareInterface{
     private SuperPlayer player ;
     private boolean isLive;
     /**
      * 测试地址
      */
     private String url;
+    private List<com.superplayer.library.ClarityBean> list = new ArrayList<>();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -23,12 +31,24 @@ public class Main4Activity extends AppCompatActivity implements  SuperPlayer.OnN
     }
 
     private void initIntent() {
-        url = getIntent().getStringExtra("url");
+       // url = getIntent().getStringExtra("url");
+       // isLive = getIntent().getBooleanExtra("isLive",false);
+        list = (List<com.superplayer.library.ClarityBean>) getIntent().getSerializableExtra("url");
+        Log.e("videoUrl","url::"+list);
+
+
     }
 
     private void initView() {
 
         player = (SuperPlayer) findViewById(R.id.player_layout);
+        player.setDiffentClarity(list);
+
+        if (list.get(2).getIsLive() == 1){
+            isLive = true ;
+        }else {
+            isLive = false ;
+        }
         if(isLive){
             player.setLive(true);//设置该地址是直播的地址
         }
@@ -40,6 +60,10 @@ public class Main4Activity extends AppCompatActivity implements  SuperPlayer.OnN
                         /**
                          * 监听视频是否已经准备完成开始播放。（可以在这里处理视频封面的显示跟隐藏）
                          */
+                        Log.e("player","onprepare");
+                       // player.play(url,5000);//开始播放视频
+                    //    player.playSwitch(Environment.getExternalStorageDirectory().getPath() + "/DCIM/Camera/VID_20180109_224623.mp4");
+
                     }
                 }).onComplete(new Runnable() {
             @Override
@@ -64,9 +88,12 @@ public class Main4Activity extends AppCompatActivity implements  SuperPlayer.OnN
                  */
 
             }
-        }).setTitle(url)//设置视频的titleName
-                .play(url);//开始播放视频
+        }).setTitle(list.get(2).getVideoPath())//设置视频的titleName
+                .play(list.get(2).getVideoPath(),5000);//开始播放视频
+
+
         player.setScaleType(SuperPlayer.SCALETYPE_FITXY);
+
     }
 
     @Override
@@ -130,5 +157,10 @@ public class Main4Activity extends AppCompatActivity implements  SuperPlayer.OnN
             return;
         }
         super.onBackPressed();
+    }
+
+    @Override
+    public void onClick() {
+        Log.e("share","shareeeee");
     }
 }

@@ -56,9 +56,11 @@
             android:name=".Main3Activity"
             android:configChanges="orientation|keyboardHidden|screenSize">
         </activity>
-        <activity android:name=".Main4Activity">
+        <activity android:name=".Main4Activity"
+            android:theme="@style/Theme.AppCompat.NoActionBar"
+            android:configChanges="keyboardHidden|orientation|screenSize"
+            android:screenOrientation="sensor"/>
 
-        </activity>
         <activity android:name=".AdActivity">
         </activity>
 
