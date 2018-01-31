@@ -1,57 +1,91 @@
 package com.sunxiao.mathapplication;
 
 import android.content.res.Configuration;
+import android.database.ContentObserver;
 import android.os.Environment;
+import android.os.Handler;
+import android.provider.Settings;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 
+import com.sunxiao.mathapplication.manager.FloatManager2;
+import com.sunxiao.mathapplication.manager.FloatWindowManager;
+import com.sunxiao.mathapplication.manager.FloatWindowPermissionChecker;
 import com.superplayer.library.SuperPlayer;
 import com.superplayer.library.utils.ShareInterface;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class Main4Activity extends AppCompatActivity implements  SuperPlayer.OnNetChangeListener , ShareInterface{
-    private SuperPlayer player ;
+public class Main4Activity extends AppCompatActivity implements SuperPlayer.OnNetChangeListener {
+    private SuperPlayer player;
     private boolean isLive;
     /**
      * 测试地址
      */
-    private String url;
+    private String videoUrl;
     private List<com.superplayer.library.ClarityBean> list = new ArrayList<>();
+    private int currentPosition;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main4);
-
+        getContentResolver().registerContentObserver(Settings.System.getUriFor("navigationbar_is_min"), true, contentObserver);
         initIntent();
         initView();
     }
+    //监听底部导航栏的展开与收起
+    public ContentObserver contentObserver = new ContentObserver(new Handler()) {
+        @Override
+        public void onChange(boolean selfChange) {
+            super.onChange(selfChange);
+            int navigationBarIsMin = Settings.System.getInt(getContentResolver(),
+                    "navigationbar_is_min", 0);
+            if (navigationBarIsMin == 1) {//导航键隐藏了
+                Log.e("sjdksjdks","导航隐藏");
+            } else {//导航键显示了
+                Log.e("sjdksjdks","导航显示");
+            }
+        }
+    };
 
     private void initIntent() {
-       // url = getIntent().getStringExtra("url");
-       // isLive = getIntent().getBooleanExtra("isLive",false);
-        list = (List<com.superplayer.library.ClarityBean>) getIntent().getSerializableExtra("url");
-        Log.e("videoUrl","url::"+list);
+        // url = getIntent().getStringExtra("url");
+        // isLive = getIntent().getBooleanExtra("isLive",false);
 
+        if (getIntent().getStringExtra("path") != null) {
 
+            videoUrl = getIntent().getStringExtra("path");
+            currentPosition = Integer.parseInt(getIntent().getStringExtra("currentPosition"));
+        }else {
+            list = (List<com.superplayer.library.ClarityBean>) getIntent().getSerializableExtra("url");
+            Log.e("videoUrl", "url::" + list);
+        }
     }
 
     private void initView() {
 
         player = (SuperPlayer) findViewById(R.id.player_layout);
-        player.setDiffentClarity(list);
+        player.showCenterControl(false);
+        player.setSupportGesture(true);
 
-        if (list.get(2).getIsLive() == 1){
-            isLive = true ;
-        }else {
-            isLive = false ;
+        if (list.size() > 0) {
+            player.setDiffentClarity(list);
+            videoUrl = list.get(2).getVideoPath();
+
+            if (list.get(2).getIsLive() == 1) {
+                isLive = true;
+            } else {
+                isLive = false;
+            }
+            if (isLive) {
+                player.setLive(true);//设置该地址是直播的地址
+            }
         }
-        if(isLive){
-            player.setLive(true);//设置该地址是直播的地址
-        }
+
+
         player.setNetChangeListener(true)//设置监听手机网络的变化
                 .setOnNetChangeListener(this)//实现网络变化的回调
                 .onPrepared(new SuperPlayer.OnPreparedListener() {
@@ -60,9 +94,9 @@ public class Main4Activity extends AppCompatActivity implements  SuperPlayer.OnN
                         /**
                          * 监听视频是否已经准备完成开始播放。（可以在这里处理视频封面的显示跟隐藏）
                          */
-                        Log.e("player","onprepare");
-                       // player.play(url,5000);//开始播放视频
-                    //    player.playSwitch(Environment.getExternalStorageDirectory().getPath() + "/DCIM/Camera/VID_20180109_224623.mp4");
+                        Log.e("player", "onprepare");
+                        // player.play(url,5000);//开始播放视频
+                        //    player.playSwitch(Environment.getExternalStorageDirectory().getPath() + "/DCIM/Camera/VID_20180109_224623.mp4");
 
                     }
                 }).onComplete(new Runnable() {
@@ -88,11 +122,29 @@ public class Main4Activity extends AppCompatActivity implements  SuperPlayer.OnN
                  */
 
             }
-        }).setTitle(list.get(2).getVideoPath())//设置视频的titleName
-                .play(list.get(2).getVideoPath(),5000);//开始播放视频
-
+        }).setTitle(videoUrl)//设置视频的titleName
+                .play(videoUrl, currentPosition);//开始播放视频
 
         player.setScaleType(SuperPlayer.SCALETYPE_FITXY);
+
+        player.startFlowWindow(new ShareInterface() {
+            @Override
+            public void onClick() {
+                if (!FloatWindowPermissionChecker.checkFloatWindowPermission()) {
+                    FloatWindowPermissionChecker.askForFloatWindowPermission(Main4Activity.this);
+                    return;
+                } else {
+                    currentPosition = player.getCurrentPosition();
+                    FloatManager2.getInstance().showFloatWindow(Main4Activity.this, videoUrl, currentPosition);
+                    finish();
+                }
+            }
+
+            @Override
+            public void getURl(String url) {
+                videoUrl = url;
+            }
+        });
 
     }
 
@@ -139,10 +191,12 @@ public class Main4Activity extends AppCompatActivity implements  SuperPlayer.OnN
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        getContentResolver().unregisterContentObserver(contentObserver);
         if (player != null) {
             player.onDestroy();
         }
     }
+
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
@@ -159,8 +213,4 @@ public class Main4Activity extends AppCompatActivity implements  SuperPlayer.OnN
         super.onBackPressed();
     }
 
-    @Override
-    public void onClick() {
-        Log.e("share","shareeeee");
-    }
 }

@@ -8,7 +8,6 @@ import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.PixelFormat;
 import android.os.Build;
-import android.os.Handler;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.TypedValue;
@@ -18,13 +17,14 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.ProgressBar;
 
-import com.pili.pldroid.player.AVOptions;
-import com.pili.pldroid.player.PLMediaPlayer;
-import com.pili.pldroid.player.widget.PLVideoTextureView;
-import com.sunxiao.mathapplication.Main2Activity;
+import com.sunxiao.mathapplication.Main4Activity;
 import com.sunxiao.mathapplication.MyApplication;
 import com.sunxiao.mathapplication.R;
+import com.superplayer.library.mediaplayer.IjkVideoView;
+
+import tv.danmaku.ijk.media.player.IMediaPlayer;
 
 import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 import static android.view.WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED;
@@ -55,14 +55,14 @@ public class FloatManager2 {
     private int dp12;
     private boolean isAddToWindow = false;
     private int codec;
-    private PLVideoTextureView fakeVideoView;
+    private IjkVideoView fakeVideoView;
+    private ProgressBar progressBar ;
     private int videoKind;
     private String videoPath;
-
-    private boolean notMove;
+    private boolean notMove = true;
+    private int current ;
 
     private FloatManager2() {
-        Log.e("createSmall", "floatWindowManager");
         mContext = MyApplication.getInstance();
         mWindowManager = (WindowManager) mContext.getSystemService(Context.WINDOW_SERVICE);
         mStatusBarHeight = SystemBarUtils.getStatusBarHeight(mContext);
@@ -74,17 +74,19 @@ public class FloatManager2 {
         return sInstance;
     }
 
-    public void showFloatWindow(Context activity) {
+    public void showFloatWindow(Context activity ,String url ,int currentTime) {
+       // mContext = activity ;
         if (!FloatWindowPermissionChecker.checkFloatWindowPermission()) {
             FloatWindowPermissionChecker.askForFloatWindowPermission(activity);
             return;
         }
         if (isAddToWindow) return;
         try {
-            Log.e("createSmall", "add" + "::count::");
+            Log.e("createSmall", "add" + "::url::"+url+":::current:::"+currentTime);
             mWindowManager.addView(mSmallWindow, mSmallWindowParams);
+            current = currentTime ;
+            videoPath = url;
             initOption();
-            videoListener();
         } catch (Exception e) {
             Log.e("createSmall", "update");
             mWindowManager.updateViewLayout(mSmallWindow, mSmallWindowParams);
@@ -94,7 +96,10 @@ public class FloatManager2 {
 
     public void removeFromWindow() {
         Log.e("createSmall", "remove" + "====isaddtoview::" + isAddToWindow);
+       // fakeVideoView.stop();
+       // fakeVideoView.release();
         fakeVideoView.stopPlayback();
+        fakeVideoView.release(true);
         if (!isAddToWindow) return;
         mWindowManager.removeView(mSmallWindow);
         isAddToWindow = false;
@@ -104,9 +109,10 @@ public class FloatManager2 {
     private static float lastY;
 
     private void createSmallWindow() {
-        Log.e("createSmall", "createSmall");
-        mSmallWindow = LayoutInflater.from(mContext).inflate(R.layout.layout_float_window, null);
-        fakeVideoView = (PLVideoTextureView) mSmallWindow.findViewById(R.id.video);
+        Log.e("createSmall", "createSmall::"+mContext);
+        mSmallWindow = LayoutInflater.from(mContext).inflate(R.layout.layout_flow_window, null);
+        fakeVideoView = (IjkVideoView) mSmallWindow.findViewById(R.id.video);
+        progressBar = (ProgressBar) mSmallWindow.findViewById(R.id.flow_window_loading);
 
         fakeVideoView.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -184,11 +190,11 @@ public class FloatManager2 {
 
                         if (notMove) {
                             //没有滑动，判断为单击事件
-                            Intent intent = new Intent(getInstance().mContext, Main2Activity.class);
+                            Intent intent = new Intent(getInstance().mContext, Main4Activity.class);
                             intent.putExtra("path", videoPath);
-                            intent.putExtra("kind", videoKind);
                             intent.putExtra("currentPosition", "" + fakeVideoView.getCurrentPosition());
                             Log.e("onclick", "click::" + fakeVideoView.getCurrentPosition());
+                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                             mContext.startActivity(intent);
                             removeFromWindow();
                         } else {
@@ -203,7 +209,7 @@ public class FloatManager2 {
             @Override
             public void onClick(View v) {
                 removeFromWindow();
-                Main2Activity.currentP = 0;
+                //Main2Activity.currentP = 0;
             }
         });
 
@@ -234,9 +240,36 @@ public class FloatManager2 {
     }
 
     private void initOption() {
-        videoKind = Main2Activity.videoKind;
-        videoPath = Main2Activity.videoPath;
-        codec = Main2Activity.codec;
+
+       // fakeVideoView.play(videoPath , current);
+        fakeVideoView.setVideoPath(videoPath);
+        fakeVideoView.setOnInfoListener(new IMediaPlayer.OnInfoListener() {
+            @Override
+            public boolean onInfo(IMediaPlayer mp, int what, int extra) {
+                Log.e("jdfjdkfjdk","infor::"+what+"::::extra::"+extra);
+                switch (what){
+                    case 701 :
+                        progressBar.setVisibility(View.VISIBLE);
+                        break;
+                    case 702 :
+                        progressBar.setVisibility(View.GONE);
+                        break;
+                }
+                return false;
+
+            }
+        });
+
+        fakeVideoView.setOnPreparedListener(new IMediaPlayer.OnPreparedListener() {
+            @Override
+            public void onPrepared(IMediaPlayer mp) {
+                fakeVideoView.start();
+                fakeVideoView.seekTo(current);
+                Log.e("jdfjdkfjdk","prepare");
+            }
+        });
+
+       /* codec = Main2Activity.codec;
         AVOptions options = new AVOptions();
 
         // 解码方式:
@@ -265,56 +298,8 @@ public class FloatManager2 {
         options.setInteger(AVOptions.KEY_PREFER_FORMAT, videoKind);
         // 请在开始播放之前配置
         fakeVideoView.setAVOptions(options);
-        fakeVideoView.setVideoPath(videoPath);
+        fakeVideoView.setVideoPath(videoPath);*/
     }
 
-    private void videoListener() {
-        fakeVideoView.setOnPreparedListener(new PLMediaPlayer.OnPreparedListener() {
-            @Override
-            public void onPrepared(PLMediaPlayer plMediaPlayer, int i) {
-                Log.e("currentflow", "current::" + Main2Activity.currentP);
-                // fakeVideoView.start();
-                //跳至指定位置
-                fakeVideoView.start();
-                new Handler().postDelayed(new Runnable(){
-                    public void run() {
-                        //execute the task
-                        Log.e("handler","延迟执行");
-                        fakeVideoView.seekTo(Main2Activity.currentP);
-                    }
-                }, 1000);
-                //  fakeVideoView.seekTo(Main2Activity.currentP);
 
-            }
-        });
-        fakeVideoView.setOnInfoListener(new PLMediaPlayer.OnInfoListener() {
-            @Override
-            public boolean onInfo(PLMediaPlayer plMediaPlayer, int i, int i1) {
-                Log.e("inforflow","flowtINFOR::"+i);
-                switch (i){
-                    case 3 :
-
-                        break;
-                    case 10001 :
-                        // fakeVideoView.seekTo(Main2Activity.currentP);
-                        break;
-                }
-                return false;
-            }
-        });
-        fakeVideoView.setOnErrorListener(new PLMediaPlayer.OnErrorListener() {
-            @Override
-            public boolean onError(PLMediaPlayer plMediaPlayer, int i) {
-                Log.e("inforflow","flowtERROR::"+i);
-
-                return false;
-            }
-        });
-        fakeVideoView.setOnSeekCompleteListener(new PLMediaPlayer.OnSeekCompleteListener() {
-            @Override
-            public void onSeekComplete(PLMediaPlayer plMediaPlayer) {
-
-            }
-        });
-    }
 }

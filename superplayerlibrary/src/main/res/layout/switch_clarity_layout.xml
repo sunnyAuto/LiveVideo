@@ -30,5 +30,11 @@
         android:layout_marginTop="20dp"
         android:textSize="14sp"
         android:text="高清(480P)"/>
+    <Button
+        android:id="@+id/cancel_choose"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:padding="5dp"
+        android:layout_alignParentRight="true"/>
 
 </RelativeLayout>

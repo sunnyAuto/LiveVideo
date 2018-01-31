@@ -335,8 +335,7 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
         vView.setOnInfoListener(new PLMediaPlayer.OnInfoListener() {
             @Override
             public boolean onInfo(PLMediaPlayer plMediaPlayer, int i, int i1) {
-                Log.e("INfor","plMediaPlay::"+plMediaPlayer.getPlayerState()+":::i="+i+":::i1="+i1);
-                Log.e("PPPPP","PROGRESS::"+seekBar.getProgress());
+
                 if (plMediaPlayer.getPlayerState() == PlayerState.PLAYING){
                     if (isUser == true) {
                         vView.seekTo(seekBar.getProgress());
@@ -349,7 +348,7 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
         vView.setOnErrorListener(new PLMediaPlayer.OnErrorListener() {
             @Override
             public boolean onError(PLMediaPlayer plMediaPlayer, int i) {
-                Log.e("INfor","plMediaPLayer:"+plMediaPlayer.getPlayerState()+":::ERROR:"+i);
+                //Log.e("INfor","plMediaPLayer:"+plMediaPlayer.getPlayerState()+":::ERROR:"+i);
                 return false;
             }
         });
@@ -687,7 +686,7 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
      *
      * @param REVERSE
     * 根据角度进行竖屏切换，如果为固定全屏则只能横屏切换
-    *根据角度进行横屏切换
+    *  根据角度进行横屏切换
      *
      */
     private void fullScreen(int REVERSE){
@@ -834,9 +833,9 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
             int navigationBarIsMin = Settings.System.getInt(getContentResolver(),
                     "navigationbar_is_min", 0);
             if (navigationBarIsMin == 1) {//导航键隐藏了
-
+                Log.e("sjdksjdks","导航隐藏");
             } else {//导航键显示了
-
+                Log.e("sjdksjdks","导航显示");
             }
         }
     };

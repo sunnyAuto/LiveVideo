@@ -8,4 +8,5 @@ import android.view.View;
 
 public interface ShareInterface {
     void onClick();
+    void getURl(String url);
 }

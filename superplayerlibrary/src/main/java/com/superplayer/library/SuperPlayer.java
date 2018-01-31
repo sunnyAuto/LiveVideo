@@ -281,7 +281,6 @@ public class SuperPlayer extends RelativeLayout{
 		}
 	}
 
-
 	private final SeekBar.OnSeekBarChangeListener mSeekListener = new SeekBar.OnSeekBarChangeListener() {
 		@Override
 		public void onProgressChanged(SeekBar seekBar, int progress,
@@ -449,6 +448,7 @@ public class SuperPlayer extends RelativeLayout{
 		$.id(R.id.low_clarity).clicked(onClickListener);
 		$.id(R.id.middle_clarity).clicked(onClickListener);
 		$.id(R.id.high_clarity).clicked(onClickListener);
+		$.id(R.id.cancel_choose).clicked(onClickListener);
 		//分享
 		$.id(R.id.view_jky_player_iv_share).clicked(onClickListener);
 
@@ -531,7 +531,14 @@ public class SuperPlayer extends RelativeLayout{
 				if (!fullScreenOnly && !portrait) {
 					activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 				} else {
+					if (videoView.isPlaying()){
+						//当前如果是播放状态
+						shareInterface.onClick();
+					}else {
 						activity.finish();
+					}
+
+						//activity.finish();
 				}
 			} else if (v.getId() == R.id.view_jky_player_tv_continue) {
 				isNetListener = false;// 取消网络的监听
@@ -543,27 +550,30 @@ public class SuperPlayer extends RelativeLayout{
 				//切换当前清晰度的视频地址，隐藏选择布局
 				playSwitch(list.get(0).getVideoPath());
 				switchClarity(false);
+                shareInterface.getURl(list.get(0).getVideoPath());
 			}else if (v.getId() == R.id.middle_clarity){
 				//切换当前清晰度的视频地址，隐藏选择布局
 				playSwitch(list.get(1).getVideoPath());
 				switchClarity(false);
+                shareInterface.getURl(list.get(1).getVideoPath());
 
 			}else if (v.getId() == R.id.high_clarity){
 				//切换当前清晰度的视频地址，隐藏选择布局
 				playSwitch(list.get(2).getVideoPath());
 				switchClarity(false);
+                shareInterface.getURl(list.get(1).getVideoPath());
 			}else if (v.getId() == R.id.view_jky_player_iv_share){
 				//分享
-				shareInterface.onClick();
+
+			}else if (v.getId() == R.id.cancel_choose){
+				switchClarity(false);
 			}
 		}
 	};
-	private ShareInterface shareInterface = new ShareInterface() {
-		@Override
-		public void onClick() {
-			Log.e("share","player    shareeeee");
-		}
-	};
+	private ShareInterface shareInterface ;
+    public void startFlowWindow(ShareInterface shareInterface){
+        this.shareInterface = shareInterface ;
+    }
 
 	private void switchClarity(Boolean show){//显示切换清晰度布局
 
