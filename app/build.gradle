@@ -38,21 +38,27 @@ dependencies {
     compile files('libs/pldroid-player-2.0.3.jar')
     //bilibili
     //required, enough for most devices.
+    
+
+    //jwplayer
+    // Only required if using IMA features
+    // Only required if using Chromecast
+    compile project(
+
+
+    ':superplayerlibrary')
+
+
     compile 'com.android.support:appcompat-v7:25.3.0'
     compile 'com.android.support:support-v4:25.3.0'
     compile 'com.android.support.constraint:constraint-layout:1.0.0-beta4'
     compile 'com.github.ctiao:DanmakuFlameMaster:0.5.3'
     compile 'cn.jzvd:jiaozivideoplayer:6.2.3'
     compile 'com.android.support:recyclerview-v7:25.3.0'
-    testCompile 'junit:junit:4.12'
     compile 'com.zhy:base-rvadapter:3.0.3'
-
-    //jwplayer
     compile 'com.longtailvideo.jwplayer:jwplayer-core:+'
     compile 'com.longtailvideo.jwplayer:jwplayer-common:+'
-    compile 'com.longtailvideo.jwplayer:jwplayer-ima:+'        // Only required if using IMA features
-    compile 'com.longtailvideo.jwplayer:jwplayer-chromecast:+' // Only required if using Chromecast
-    compile project(':superplayerlibrary')
-
-
+    compile 'com.longtailvideo.jwplayer:jwplayer-ima:+'
+    compile 'com.longtailvideo.jwplayer:jwplayer-chromecast:+'
+    testCompile 'junit:junit:4.12'
 }

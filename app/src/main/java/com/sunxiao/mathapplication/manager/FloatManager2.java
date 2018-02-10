@@ -63,6 +63,7 @@ public class FloatManager2 {
     private int current ;
 
     private FloatManager2() {
+        Log.e("createSmall", "FloatManager2");
         mContext = MyApplication.getInstance();
         mWindowManager = (WindowManager) mContext.getSystemService(Context.WINDOW_SERVICE);
         mStatusBarHeight = SystemBarUtils.getStatusBarHeight(mContext);

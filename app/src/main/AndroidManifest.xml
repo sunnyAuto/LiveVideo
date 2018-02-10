@@ -28,12 +28,12 @@
             android:theme="@style/FullscreenTheme">
         </activity>
         <activity android:name=".MainActivity">
-            <intent-filter>
+
+           <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
 
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
-
             <meta-data
                 android:name="android.app.shortcuts"
                 android:resource="@xml/shortcuts"/>
@@ -56,14 +56,17 @@
             android:name=".Main3Activity"
             android:configChanges="orientation|keyboardHidden|screenSize">
         </activity>
-        <activity android:name=".Main4Activity"
-            android:theme="@style/Theme.AppCompat.NoActionBar"
+        <activity
+            android:name=".Main4Activity"
             android:configChanges="keyboardHidden|orientation|screenSize"
-            android:screenOrientation="sensor"/>
-
+            android:screenOrientation="sensor"
+            android:theme="@style/Theme.AppCompat.NoActionBar"
+            android:windowSoftInputMode="adjustPan"/>
         <activity android:name=".AdActivity">
         </activity>
+        <activity android:name=".Main5Activity">
 
+        </activity>
     </application>
 
 </manifest>

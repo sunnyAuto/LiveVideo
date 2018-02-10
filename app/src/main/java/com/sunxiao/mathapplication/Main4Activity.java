@@ -8,7 +8,9 @@ import android.provider.Settings;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.WindowManager;
 
+import com.sunxiao.mathapplication.Utils.ScreenImproveUtils;
 import com.sunxiao.mathapplication.manager.FloatManager2;
 import com.sunxiao.mathapplication.manager.FloatWindowManager;
 import com.sunxiao.mathapplication.manager.FloatWindowPermissionChecker;
@@ -35,6 +37,8 @@ public class Main4Activity extends AppCompatActivity implements SuperPlayer.OnNe
         getContentResolver().registerContentObserver(Settings.System.getUriFor("navigationbar_is_min"), true, contentObserver);
         initIntent();
         initView();
+
+        FloatManager2.getInstance().removeFromWindow();//为了防止浮窗出现后，再点击进出视屏播放页面浮窗不消失
     }
     //监听底部导航栏的展开与收起
     public ContentObserver contentObserver = new ContentObserver(new Handler()) {
@@ -44,9 +48,11 @@ public class Main4Activity extends AppCompatActivity implements SuperPlayer.OnNe
             int navigationBarIsMin = Settings.System.getInt(getContentResolver(),
                     "navigationbar_is_min", 0);
             if (navigationBarIsMin == 1) {//导航键隐藏了
-                Log.e("sjdksjdks","导航隐藏");
+                Log.e("getDefaultDisplay","导航隐藏");
+                player.reSetSize(true);
             } else {//导航键显示了
-                Log.e("sjdksjdks","导航显示");
+                Log.e("getDefaultDisplay","导航显示");
+                player.reSetSize(false);
             }
         }
     };
@@ -68,7 +74,7 @@ public class Main4Activity extends AppCompatActivity implements SuperPlayer.OnNe
     private void initView() {
 
         player = (SuperPlayer) findViewById(R.id.player_layout);
-        player.showCenterControl(false);
+        player.showCenterControl(true);
         player.setSupportGesture(true);
 
         if (list.size() > 0) {

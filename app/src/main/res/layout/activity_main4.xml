@@ -6,13 +6,19 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context="com.sunxiao.mathapplication.Main4Activity"
-    tools:layout_editor_absoluteY="81dp"
-    tools:layout_editor_absoluteX="0dp">
+    tools:layout_editor_absoluteX="0dp"
+    tools:layout_editor_absoluteY="81dp">
 
-<com.superplayer.library.SuperPlayer
-    android:id="@+id/player_layout"
-    android:layout_width="match_parent"
-    android:layout_height="250dp"/>
+    <com.superplayer.library.SuperPlayer
+        android:id="@+id/player_layout"
+        android:layout_width="match_parent"
+        android:layout_height="250dp"
+        android:visibility="visible"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:layout_below="@+id/player_layout"/>
 
 
 </RelativeLayout>

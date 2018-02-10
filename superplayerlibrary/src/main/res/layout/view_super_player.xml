@@ -8,14 +8,13 @@
     <com.superplayer.library.mediaplayer.IjkVideoView
         android:id="@+id/video_view"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"/>
 
     <include
         android:id="@+id/view_super_player_control"
         layout="@layout/view_super_player_control"
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>
-
     <!--<include layout="@layout/view_super_player_center" />
 
     &lt;!&ndash; bottom &ndash;&gt;

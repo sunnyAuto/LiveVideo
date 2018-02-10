@@ -1,6 +1,7 @@
 package com.sunxiao.mathapplication;
 
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -8,6 +9,7 @@ import android.content.pm.ActivityInfo;
 import android.database.ContentObserver;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
 import android.media.MediaMetadataRetriever;
 import android.os.Build;
@@ -40,6 +42,7 @@ import com.pili.pldroid.player.PLMediaPlayer;
 import com.pili.pldroid.player.PlayerState;
 import com.pili.pldroid.player.widget.PLVideoTextureView;
 import com.sunxiao.mathapplication.Utils.AnimationUtil;
+import com.sunxiao.mathapplication.Utils.NetUtils;
 import com.sunxiao.mathapplication.Utils.ScreenImproveUtils;
 import com.sunxiao.mathapplication.Utils.ScreenSwitchUtils;
 import com.sunxiao.mathapplication.View.BrightnessHelper;
@@ -100,9 +103,14 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
     private SwipeRefreshLayout swipeRefreshLayout ;
     private Button startFlow , startFlow2;
     public  static  long currentP ;
-    private ImageView iv ;
+    private ImageView iv , screenLock;
     private int firstPlay = 0 ;
     private int stopStatus = 0;
+    private  long max = 0 ;
+    private TextView changeClarity ;
+    private RelativeLayout shareLayout ,changeClarityLayout ;
+    private TextView lowClarity , midClarity , highClarity ;
+
 
 
     @Override
@@ -113,7 +121,7 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
 
         myOrientoinListener.enable();
         getContentResolver().registerContentObserver(Settings.System.getUriFor("navigationbar_is_min"), true, contentObserver);
-        ScreenImproveUtils.assistActivity(findViewById(R.id.content));
+       // ScreenImproveUtils.assistActivity(findViewById(R.id.content));
 
         /**获取屏幕的宽高**/
       //  DisplayMetrics  dm = new DisplayMetrics();
@@ -281,6 +289,8 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
         dan.setOnClickListener(l);
         back = (ImageView) findViewById(R.id.back);
         back.setOnClickListener(l);
+      // changeClarity = (TextView) findViewById(R.id.switch_clarity_button);
+       // changeClarity.setOnClickListener(l);
         totalTime = (TextView) findViewById(R.id.current_total_time);
         currentTime = (TextView) findViewById(R.id.current_play_time);
         loading = (LoadingView) findViewById(R.id.progressBar);
@@ -292,7 +302,7 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
             public void onPrepared(PLMediaPlayer plMediaPlayer, int i) {
                 //视频开启播放后, 触发的监听器
                 Log.e("PPPPP","PREPAREED");
-                long max = vView.getDuration();
+                max = vView.getDuration();
                 totalTime.setText(stringForTime(max));
                 seekBar.setMax((int) max);
 
@@ -456,6 +466,21 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
 
         startFlow2 = (Button) findViewById(R.id.start_flow2);
         startFlow2.setOnClickListener(l);
+
+        shareLayout = (RelativeLayout) findViewById(R.id.layout_share_to);
+        changeClarityLayout = (RelativeLayout) findViewById(R.id.layout_change_clarity);
+        lowClarity = (TextView) findViewById(R.id.low_clarity);
+        lowClarity.setOnClickListener(l);
+        midClarity = (TextView) findViewById(R.id.middle_clarity);
+        midClarity.setOnClickListener(l);
+        highClarity = (TextView) findViewById(R.id.high_clarity);
+        highClarity.setOnClickListener(l);
+        screenLock = (ImageView) findViewById(R.id.lock_touch);
+        screenLock.setOnClickListener(l);
+    }
+    //获取有几种不同的清晰度
+    private void setClartityBtnText(){
+
     }
     private void updateCurrrent(){
         if (timer != null) {
@@ -470,7 +495,7 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
         task = new TimerTask() {
             @Override
             public void run() {
-                Log.e("timertask","updatecu");
+               // Log.e("timertask","updatecu"+vView.getCurrentPosition()+"++++percent:::"+(vView.getBufferPercentage()*max/100)+":::max::"+max);
                 seekBar.setProgress((int) vView.getCurrentPosition());
                 currentTime.post(new Runnable() {
                     @Override
@@ -478,6 +503,9 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
                         currentTime.setText(stringForTime(vView.getCurrentPosition()));
                     }
                 });
+
+                seekBar.setSecondaryProgress((int) (vView.getBufferPercentage()*max/100));
+               // Log.e("timertask","updatecu"+vView.getCurrentPosition()+"===percentget:::"+seekBar.getSecondaryProgress());
 
             }
         };
@@ -599,7 +627,6 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
                     clicked = 1;
                     selfChange = 1 ;
                     fullScreen(0);
-
                     break;
                 case R.id.control_layout :
                     break;
@@ -628,9 +655,47 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
                         finish();
                     }
                     break;
+               /* case R.id.switch_clarity_button :
+                    changeClarityLayout.setVisibility(changeClarityLayout.getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE);
+                    break;*/
+                case R.id.low_clarity :
+                    changeClar(lowClarity , 0);
+                    break;
+                case R.id.middle_clarity :
+                    changeClar(midClarity , 1);
+                    break;
+                case R.id.high_clarity :
+                    changeClar(highClarity , 2);
+                    break;
             }
         }
     };
+    //切换不同清晰度的视频
+    private void changeClar(TextView which , int i){
+        if (i == 0){
+            Drawable drawable = getResources().getDrawable(R.drawable.background_textview);
+            which.setBackground(drawable);
+
+            midClarity.setBackground(null);
+            highClarity.setBackground(null);
+        }else if (i == 1){
+            Drawable drawable = getResources().getDrawable(R.drawable.background_textview);
+            which.setBackground(drawable);
+
+            lowClarity.setBackground(null);
+            highClarity.setBackground(null);
+        }else if (i == 2){
+            Drawable drawable = getResources().getDrawable(R.drawable.background_textview);
+            which.setBackground(drawable);
+
+            midClarity.setBackground(null);
+            lowClarity.setBackground(null);
+        }
+
+
+    }
+
+
 
     Handler handler=new Handler();
     Runnable runnable=new Runnable() {
@@ -654,8 +719,9 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
         full.setVisibility(View.VISIBLE);
         full.setAnimation(AnimationUtil.moveToViewLocation());
         if (stretch_flag == false){
-            danLayout.setVisibility(View.VISIBLE);
-            danLayout.setAnimation(AnimationUtil.moveToViewLeft());
+           // danLayout.setVisibility(View.VISIBLE);
+           // danLayout.setAnimation(AnimationUtil.moveToViewLeft());
+            screenLock.setVisibility(View.VISIBLE);
         }
 
         backLayout.setVisibility(View.VISIBLE);
@@ -738,7 +804,8 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
         }
 
     }
-    public static int getRealHeight(Context context , int hw) {
+    public static int  getRealHeight(Context context , int hw) {
+        Log.e("main2activity","getRealHeight");
         WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
         Display display = wm.getDefaultDisplay();
         int screenHeight = 0;
@@ -896,6 +963,31 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
         }
     }
 
+    public class NetChangeReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+
+            if (NetUtils.getNetworkType(Main2Activity.this) == 3) {// 网络是WIFI
+
+            } else if (NetUtils.getNetworkType(Main2Activity.this) == 2
+                    || NetUtils.getNetworkType(Main2Activity.this) == 4) {// 网络不是手机网络或者是以太网
+                // TODO 更新状态是暂停状态,是否是直播
+               // statusChange(STATUS_PAUSE);
+               // videoView.pause();//暂停播放
+               // updatePausePlay(); //更新播放按钮的图标状态
+               // $.id(com.superplayer.library.R.id.app_video_loading).gone();//加载progressbar隐藏
+               /* onNetChangeListener.onMobile();
+                showStatus(
+                        activity.getResources().getString(
+                                com.superplayer.library.R.string.player_not_wifi), "继续");*/ //提示
+            } else if (NetUtils.getNetworkType(Main2Activity.this) == 1) {// 网络链接断开
+                onPause();
+               // onNetChangeListener.onDisConnect();
+            } else {
+                //onNetChangeListener.onNoAvailable();
+            }
+        }
+    }
 
 
 
