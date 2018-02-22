@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
 import android.database.ContentObserver;
 import android.graphics.Bitmap;
@@ -12,6 +13,7 @@ import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
 import android.media.MediaMetadataRetriever;
+import android.net.ConnectivityManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -53,31 +55,32 @@ import com.sunxiao.mathapplication.controller.DensityUtil;
 import com.sunxiao.mathapplication.controller.LoadingView;
 import com.sunxiao.mathapplication.manager.FloatWindowManager;
 import com.sunxiao.mathapplication.manager.FloatWindowPermissionChecker;
+import com.superplayer.library.SuperPlayer;
 
 import java.util.Formatter;
 import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class Main2Activity extends AppCompatActivity implements ViewTreeObserver.OnGlobalLayoutListener  {
-    public static  PLVideoTextureView vView ;
-    private  PLMediaPlayer plMediaPlayer ;
+public class Main2Activity extends AppCompatActivity implements ViewTreeObserver.OnGlobalLayoutListener {
+    public static PLVideoTextureView vView;
+    private PLMediaPlayer plMediaPlayer;
 
-    private ImageView play ,full ,dan ,back ;
+    private ImageView play, full, dan, back;
     //private String videoPath ;
-    private LoadingView loading ;
-    public static int codec ;
-    private int landPort ;
-    private RelativeLayout backLayout ,danLayout ,landLayout ,fullLayout;
-    private VideoGestureRelativeLayout control ;
-    private int isShow , clicked;
-    private RelativeLayout btnLayout ,content;
-    private int screenWidth ,screenHeight ;
-    public static int videoKind ;
-    public static String videoPath ;
-    private SeekBar seekBar ;
-    private Timer timer ;
-    private TimerTask task ;
+    private LoadingView loading;
+    public static int codec;
+    private int landPort;
+    private RelativeLayout backLayout, danLayout, landLayout, fullLayout;
+    private VideoGestureRelativeLayout control;
+    private int isShow, clicked;
+    private RelativeLayout btnLayout, content;
+    private int screenWidth, screenHeight;
+    public static int videoKind;
+    public static String videoPath;
+    private SeekBar seekBar;
+    private Timer timer;
+    private TimerTask task;
     private int maxVolume = 0;
     private int oldVolume = 0;
     private int newProgress = 0, oldProgress = 0;
@@ -88,29 +91,33 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
     private ShowChangeLayout scl;
     private AudioManager mAudioManager;
     private boolean isLeft = false;
-    private boolean isMoved = false ;
-    private TextView title ;
-    private ImageView ad_video ,ad_paly ;
-    private String adVideoPath ;
-    private boolean isLive ;
+    private boolean isMoved = false;
+    private TextView title;
+    private ImageView ad_video, ad_paly;
+    private String adVideoPath;
+    private boolean isLive;
     private int played = 0;
-    private TextView totalTime , currentTime ;
+    private TextView totalTime, currentTime;
     public static String result = "";
-    private CommentDialog commentDialog ;
-    private float startX ,startY ,endX ,endY ;
-    private ScreenSwitchUtils instance ;
-    private MyOrientoinListener myOrientoinListener ;
-    private SwipeRefreshLayout swipeRefreshLayout ;
-    private Button startFlow , startFlow2;
-    public  static  long currentP ;
-    private ImageView iv , screenLock;
-    private int firstPlay = 0 ;
+    private CommentDialog commentDialog;
+    private float startX, startY, endX, endY;
+    private ScreenSwitchUtils instance;
+    private MyOrientoinListener myOrientoinListener;
+    private SwipeRefreshLayout swipeRefreshLayout;
+    private Button startFlow, startFlow2;
+    public static long currentP;
+    private ImageView iv, screenLock;
+    private int firstPlay = 0;
     private int stopStatus = 0;
-    private  long max = 0 ;
-    private TextView changeClarity ;
-    private RelativeLayout shareLayout ,changeClarityLayout ;
-    private TextView lowClarity , midClarity , highClarity ;
-
+    private long max = 0;
+    private TextView changeClarity;
+    private RelativeLayout shareLayout, changeClarityLayout;
+    private TextView lowClarity, midClarity, highClarity;
+    private ImageView controllPLay;
+    private NetChangeReceiver netChangeReceiver;
+    private RelativeLayout replayLayout, netWarnLayout;//重新播放，网络变化提醒
+    private TextView warnTxt, warnPlay, replayTxt;
+    private ImageView replayBtn;
 
 
     @Override
@@ -121,21 +128,19 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
 
         myOrientoinListener.enable();
         getContentResolver().registerContentObserver(Settings.System.getUriFor("navigationbar_is_min"), true, contentObserver);
-       // ScreenImproveUtils.assistActivity(findViewById(R.id.content));
+        // ScreenImproveUtils.assistActivity(findViewById(R.id.content));
 
         /**获取屏幕的宽高**/
-      //  DisplayMetrics  dm = new DisplayMetrics();
+        //  DisplayMetrics  dm = new DisplayMetrics();
 
-       // getWindowManager().getDefaultDisplay().getMetrics(dm);
+        // getWindowManager().getDefaultDisplay().getMetrics(dm);
         //DisplayMetrics metrics = getResources().getDisplayMetrics();
 
-        screenHeight = getRealHeight(this , 0);
+        screenHeight = getRealHeight(this, 0);
 
-        screenWidth = getRealHeight(this ,1);
-
-
+        screenWidth = getRealHeight(this, 1);
         //初始化获取音量属性
-        mAudioManager = (AudioManager)getSystemService(Service.AUDIO_SERVICE);
+        mAudioManager = (AudioManager) getSystemService(Service.AUDIO_SERVICE);
         maxVolume = mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
 
         //初始化亮度调节
@@ -149,19 +154,21 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
         initSeekBar();
         initIntent();
         initOption();
+        registerNetReceiver();
     }
-    private boolean isUser = false ;
+
+    private boolean isUser = false;
 
     @Override
     protected void onResume() {
         super.onResume();
-        Log.e("MAin2Activity","onResume");
+        Log.e("MAin2Activity", "onResume");
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        Log.e("MAin2Activity","onStart");
+        Log.e("MAin2Activity", "onStart");
     }
 
     private void initSeekBar() {
@@ -169,25 +176,26 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-               if (firstPlay == 1) {
-                   if (vView.isPlaying()) {
-                       vView.seekTo(seekBar.getProgress());
-                       updateCurrrent();
-                   } else {
-                       isUser = true;
-                       vView.start();
-                       play.setImageResource(R.drawable.jz_pause_normal);
-                       played = 1;
-                       updateCurrrent();
+                if (firstPlay == 1) {
+                    if (vView.isPlaying()) {
+                        vView.seekTo(seekBar.getProgress());
+                        updateCurrrent();
+                    } else {
+                        isUser = true;
+                        vView.start();
+                        play.setImageResource(R.drawable.jz_pause_normal);
+                        played = 1;
+                        updateCurrrent();
 
-                   }
-               }else {
-                  // notStartSeek();
-                   //Log.e("notstart","progress::"+seekBar.getProgress()+":::current::"+vView.getCurrentPosition());
-                   //currentP = seekBar.getProgress();
-                   //notStartSeek();
-               }
+                    }
+                } else {
+                    // notStartSeek();
+                    //Log.e("notstart","progress::"+seekBar.getProgress()+":::current::"+vView.getCurrentPosition());
+                    //currentP = seekBar.getProgress();
+                    //notStartSeek();
+                }
             }
+
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
                 if (timer != null) {
@@ -199,20 +207,21 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
                     task = null;
                 }
             }
+
             @Override
             public void onProgressChanged(SeekBar seekBar, final int progress,
                                           boolean fromUser) {
 
-               if (!fromUser){
-                   return;
-               }else {
-                   currentTime.post(new Runnable() {
-                       @Override
-                       public void run() {
-                           currentTime.setText(stringForTime(progress));
-                       }
-                   });
-               }
+                if (!fromUser) {
+                    return;
+                } else {
+                    currentTime.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            currentTime.setText(stringForTime(progress));
+                        }
+                    });
+                }
 
 
             }
@@ -222,22 +231,22 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
 
     private void initIntent() {
         Intent intent = getIntent();
-        videoKind = intent.getIntExtra("kind",1);
+        videoKind = intent.getIntExtra("kind", 1);
         videoPath = intent.getStringExtra("path");
         vView.setVideoPath(videoPath);
         vView.setDisplayAspectRatio(PLVideoTextureView.ASPECT_RATIO_FIT_PARENT);
-        if (videoKind == 1){
-            isLive = true ;
+        if (videoKind == 1) {
+            isLive = true;
             title.setText("能见直播，能源行业最权威的媒体");
-        }else if (videoKind == 2){
-            isLive = false ;
+        } else if (videoKind == 2) {
+            isLive = false;
             title.setText("mp4视频播放中。。。。");
         }
-        if (intent.getStringExtra("currentPosition")!=null){
+        if (intent.getStringExtra("currentPosition") != null) {
 
             currentP = Long.parseLong(intent.getStringExtra("currentPosition"));
 
-        }else {
+        } else {
 
         }
     }
@@ -247,7 +256,7 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
 
         // 解码方式:
         // codec＝AVOptions.MEDIA_CODEC_HW_DECODE;//硬解
-         codec=AVOptions.MEDIA_CODEC_SW_DECODE;// 软解
+        codec = AVOptions.MEDIA_CODEC_SW_DECODE;// 软解
         //codec=AVOptions.MEDIA_CODEC_AUTO; // 硬解优先，失败后自动切换到软解
         // 默认值是：MEDIA_CODEC_SW_DECODE
         options.setInteger(AVOptions.KEY_MEDIACODEC, codec);
@@ -283,14 +292,16 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
         vView.setCoverView(iv);
         play = (ImageView) findViewById(R.id.play_button);
         play.setOnClickListener(l);
+        controllPLay = (ImageView) findViewById(R.id.app_video_play);//控制条暂停播放按钮
+        controllPLay.setOnClickListener(l);
         full = (ImageView) findViewById(R.id.full);
         full.setOnClickListener(l);
         dan = (ImageView) findViewById(R.id.dan);
         dan.setOnClickListener(l);
         back = (ImageView) findViewById(R.id.back);
         back.setOnClickListener(l);
-      // changeClarity = (TextView) findViewById(R.id.switch_clarity_button);
-       // changeClarity.setOnClickListener(l);
+        changeClarity = (TextView) findViewById(R.id.switch_clarity_button);
+        changeClarity.setOnClickListener(l);
         totalTime = (TextView) findViewById(R.id.current_total_time);
         currentTime = (TextView) findViewById(R.id.current_play_time);
         loading = (LoadingView) findViewById(R.id.progressBar);
@@ -301,28 +312,28 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
             @Override
             public void onPrepared(PLMediaPlayer plMediaPlayer, int i) {
                 //视频开启播放后, 触发的监听器
-                Log.e("PPPPP","PREPAREED");
+                Log.e("PPPPP", "PREPAREED");
                 max = vView.getDuration();
                 totalTime.setText(stringForTime(max));
                 seekBar.setMax((int) max);
 
-                if (currentP != 0){
-                    firstPlay = 1 ;
-                    if (!vView.isPlaying()){
+                if (currentP != 0) {
+                    firstPlay = 1;
+                    if (!vView.isPlaying()) {
                         play.setImageResource(R.drawable.jz_pause_normal);
                         vView.start();
-                        played = 1 ;
-                        new Handler().postDelayed(new Runnable(){
+                        played = 1;
+                        new Handler().postDelayed(new Runnable() {
                             public void run() {
                                 //execute the task
-                                Log.e("handler","延迟执行");
+                                Log.e("handler", "延迟执行");
                                 vView.seekTo(currentP);
                             }
                         }, 500);
                         updateCurrrent();
 
                         hideLayout();
-                      //  isShow = 1;
+                        //  isShow = 1;
                     }
                 }
 
@@ -331,9 +342,10 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
         vView.setOnCompletionListener(new PLMediaPlayer.OnCompletionListener() {
             @Override
             public void onCompletion(PLMediaPlayer plMediaPlayer) {
-               // Log.e("complete","complete");
+                // Log.e("complete","complete");
                 //完成播放
-                play.setImageResource(R.drawable.jz_play_normal);
+                //  play.setImageResource(R.drawable.jz_play_normal);
+                updatePausePlay();
             }
         });
         vView.setOnSeekCompleteListener(new PLMediaPlayer.OnSeekCompleteListener() {
@@ -346,7 +358,7 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
             @Override
             public boolean onInfo(PLMediaPlayer plMediaPlayer, int i, int i1) {
 
-                if (plMediaPlayer.getPlayerState() == PlayerState.PLAYING){
+                if (plMediaPlayer.getPlayerState() == PlayerState.PLAYING) {
                     if (isUser == true) {
                         vView.seekTo(seekBar.getProgress());
                         isUser = false;
@@ -372,13 +384,13 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
         seekBar = (SeekBar) findViewById(R.id.seekBar1);
         scl = (ShowChangeLayout) findViewById(R.id.show_change);
         title = (TextView) findViewById(R.id.video_title);
-        ad_video = (ImageView) findViewById(R.id.ad_video);
-        ad_paly = (ImageView) findViewById(R.id.ad_video_play);
-        ad_paly.setOnClickListener(l);
+        // ad_video = (ImageView) findViewById(R.id.ad_video);
+        // ad_paly = (ImageView) findViewById(R.id.ad_video_play);
+//        ad_paly.setOnClickListener(l);
 
         // control.setVideoGestureListener(this);
         //初始化亮度调节
-       // mBrightnessHelper = new BrightnessHelper(this);
+        // mBrightnessHelper = new BrightnessHelper(this);
         control.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
@@ -454,15 +466,15 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
                             break;
                     }
                     return true;
-            }else {
-                    return false ;
+                } else {
+                    return false;
                 }
-                }
+            }
         });
 
         //swipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.refresh);
-        startFlow = (Button) findViewById(R.id.start_flow);
-        startFlow.setOnClickListener(l);
+        //startFlow = (Button) findViewById(R.id.start_flow);
+        // startFlow.setOnClickListener(l);
 
         startFlow2 = (Button) findViewById(R.id.start_flow2);
         startFlow2.setOnClickListener(l);
@@ -477,12 +489,25 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
         highClarity.setOnClickListener(l);
         screenLock = (ImageView) findViewById(R.id.lock_touch);
         screenLock.setOnClickListener(l);
+
+
+        warnTxt = (TextView) findViewById(R.id.warn_text);
+        warnPlay = (TextView) findViewById(R.id.warn_play_button);
+        warnPlay.setOnClickListener(l);
+        replayTxt = (TextView) findViewById(R.id.replay_text);
+        replayBtn = (ImageView) findViewById(R.id.replay_button);
+        replayBtn.setOnClickListener(l);
+
+        netWarnLayout = (RelativeLayout) findViewById(R.id.net_changed_warn);
+        replayLayout = (RelativeLayout) findViewById(R.id.replay_layout);
     }
+
     //获取有几种不同的清晰度
-    private void setClartityBtnText(){
+    private void setClartityBtnText() {
 
     }
-    private void updateCurrrent(){
+
+    private void updateCurrrent() {
         if (timer != null) {
             timer.cancel();
             timer = null;
@@ -495,7 +520,7 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
         task = new TimerTask() {
             @Override
             public void run() {
-               // Log.e("timertask","updatecu"+vView.getCurrentPosition()+"++++percent:::"+(vView.getBufferPercentage()*max/100)+":::max::"+max);
+                // Log.e("timertask","updatecu"+vView.getCurrentPosition()+"++++percent:::"+(vView.getBufferPercentage()*max/100)+":::max::"+max);
                 seekBar.setProgress((int) vView.getCurrentPosition());
                 currentTime.post(new Runnable() {
                     @Override
@@ -504,15 +529,17 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
                     }
                 });
 
-                seekBar.setSecondaryProgress((int) (vView.getBufferPercentage()*max/100));
-               // Log.e("timertask","updatecu"+vView.getCurrentPosition()+"===percentget:::"+seekBar.getSecondaryProgress());
+                seekBar.setSecondaryProgress((int) (vView.getBufferPercentage() * max / 100));
+                // Log.e("timertask","updatecu"+vView.getCurrentPosition()+"===percentget:::"+seekBar.getSecondaryProgress());
 
             }
         };
         timer.schedule(task, 0, 1000);
     }
+
     /**
      * 把毫秒转换成：1:20:30这里形式
+     *
      * @param timeMs
      * @return
      */
@@ -528,42 +555,46 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
             return mFormatter.format("%02d:%02d", minutes, seconds).toString();
         }
     }
+
     private StringBuilder mFormatBuilder = new StringBuilder();
     private Formatter mFormatter = new Formatter(mFormatBuilder, Locale.getDefault());
-    private void controlLight(float distance){
 
-        float newBrightness = (distance) / control.getHeight() ;
+    private void controlLight(float distance) {
+
+        float newBrightness = (distance) / control.getHeight();
         newBrightness += brightness;
-        if (newBrightness < 0){
+        if (newBrightness < 0) {
             newBrightness = 0;
-        }else if (newBrightness > 1){
+        } else if (newBrightness > 1) {
             newBrightness = 1;
         }
         mLayoutParams.screenBrightness = newBrightness;
         mWindow.setAttributes(mLayoutParams);
-        scl.setProgress((int) (newBrightness * 100) , 1);
+        scl.setProgress((int) (newBrightness * 100), 1);
         scl.setImageResource(R.drawable.brightness_w);
         scl.show();
     }
-    private void controlVoice(float voiceDistance){
 
-        int value = control.getHeight()/maxVolume ;
-        int newVolume = (int) ((voiceDistance)/value + oldVolume);
-        mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC,newVolume,AudioManager.FLAG_PLAY_SOUND);
+    private void controlVoice(float voiceDistance) {
+
+        int value = control.getHeight() / maxVolume;
+        int newVolume = (int) ((voiceDistance) / value + oldVolume);
+        mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, newVolume, AudioManager.FLAG_PLAY_SOUND);
 
         //要强行转Float类型才能算出小数点，不然结果一直为0
-        int volumeProgress = (int) (newVolume/Float.valueOf(maxVolume) *100);
-        if (volumeProgress >= 50){
+        int volumeProgress = (int) (newVolume / Float.valueOf(maxVolume) * 100);
+        if (volumeProgress >= 50) {
             scl.setImageResource(R.drawable.volume_higher_w);
-        }else if (volumeProgress > 0){
+        } else if (volumeProgress > 0) {
             scl.setImageResource(R.drawable.volume_lower_w);
-        }else {
+        } else {
             scl.setImageResource(R.drawable.volume_off_w);
         }
-        scl.setProgress(volumeProgress ,1);
+        scl.setProgress(volumeProgress, 1);
         scl.show();
     }
-    private void controlProgress(float progressDistance){
+
+    private void controlProgress(float progressDistance) {
         float offset = progressDistance;
         //根据移动的正负决定快进还是快退
         if (played == 1) {
@@ -586,29 +617,51 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
             vView.seekTo(newProgress);
         }
     }
+
     private View.OnClickListener l = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-            switch (v.getId()){
+            switch (v.getId()) {
                 case R.id.play_button:
-                    if (vView.isPlaying()){
-                        play.setImageResource(R.drawable.jz_play_normal);
+                    if (vView.isPlaying()) {
+                        //play.setImageResource(R.drawable.jz_play_normal);
                         vView.pause();
-                        played = 0 ;
-                    }else {
-                        if (firstPlay == 0){
+                        updatePausePlay();
+                        played = 0;
+                    } else {
+                        if (firstPlay == 0) {
                             firstPlay = 1;
                         }
-                        play.setImageResource(R.drawable.jz_pause_normal);
-                        played = 1 ;
+                        // play.setImageResource(R.drawable.jz_pause_normal);
+                        played = 1;
                         updateCurrrent();
                         vView.start();
-                        hideLayout();
-                      //  isShow = 1;
+                        updatePausePlay();
+                        // hideLayout();
+                        //  isShow = 1;
                     }
                     break;
-                case R.id.dan :
-                    clicked = 1 ;
+                case R.id.app_video_play:
+                    if (vView.isPlaying()) {
+                        // play.setImageResource(R.drawable.jz_play_normal);
+                        vView.pause();
+                        updatePausePlay();
+                        played = 0;
+                    } else {
+                        if (firstPlay == 0) {
+                            firstPlay = 1;
+                        }
+                        // play.setImageResource(R.drawable.jz_pause_normal);
+                        played = 1;
+                        updateCurrrent();
+                        vView.start();
+                        updatePausePlay();
+                        // hideLayout();
+                        //  isShow = 1;
+                    }
+                    break;
+                case R.id.dan:
+                    clicked = 1;
                     commentDialog = new CommentDialog(Main2Activity.this);
                     commentDialog.show();
                     commentDialog.setOnKeyListener(new DialogInterface.OnKeyListener() {
@@ -620,71 +673,87 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
                         }
                     });
                     break;
-                case R.id.videoPlayer :
+                case R.id.videoPlayer:
 
                     break;
-                case R.id.full :
+                case R.id.full:
                     clicked = 1;
-                    selfChange = 1 ;
+                    selfChange = 1;
                     fullScreen(0);
                     break;
-                case R.id.control_layout :
+                case R.id.control_layout:
                     break;
-                case R.id.back :
-                    if (stretch_flag == false){
-                        selfChange = 1 ;
+                case R.id.back:
+                    if (stretch_flag == false) {
+                        selfChange = 1;
                         fullScreen(0);
-                    }else {
+                    } else {
                         finish();
                     }
                     break;
-                case R.id.ad_video_play :
+               /* case R.id.ad_video_play :
                     vView.setVideoPath("http://www.geidco.org/html/files/2017-09/24/20170924163609090756674.mp4");
                     videoKind = 2 ;
                     initOption();
                     break;
                 case R.id.start_flow :
-                    break;
-                case  R.id.start_flow2 :
+                    break;*/
+                case R.id.start_flow2:
                     if (!FloatWindowPermissionChecker.checkFloatWindowPermission()) {
                         FloatWindowPermissionChecker.askForFloatWindowPermission(Main2Activity.this);
                         return;
-                    }else {
-                        currentP = vView.getCurrentPosition() ;
+                    } else {
+                        currentP = vView.getCurrentPosition();
                         FloatWindowManager.getInstance().showFloatWindow(Main2Activity.this);
                         finish();
                     }
                     break;
-               /* case R.id.switch_clarity_button :
+                case R.id.switch_clarity_button:
                     changeClarityLayout.setVisibility(changeClarityLayout.getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE);
-                    break;*/
-                case R.id.low_clarity :
-                    changeClar(lowClarity , 0);
                     break;
-                case R.id.middle_clarity :
-                    changeClar(midClarity , 1);
+                case R.id.low_clarity:
+                    changeClar(lowClarity, 0);
                     break;
-                case R.id.high_clarity :
-                    changeClar(highClarity , 2);
+                case R.id.middle_clarity:
+                    changeClar(midClarity, 1);
                     break;
+                case R.id.high_clarity:
+                    changeClar(highClarity, 2);
+                    break;
+
+                case R.id.replay_button :
+                    break;
+                case R.id.warn_play_button :
+                    break;
+
             }
         }
     };
+    private void setRePlay(){
+        replayLayout.setVisibility(View.VISIBLE);
+        replayTxt.setText("");
+
+    }
+    private void setNetWarn(){
+        netWarnLayout.setVisibility(View.VISIBLE);
+        hideLayout();
+    }
+
     //切换不同清晰度的视频
-    private void changeClar(TextView which , int i){
-        if (i == 0){
+    private void changeClar(TextView which, int i) {
+        if (i == 0) {
             Drawable drawable = getResources().getDrawable(R.drawable.background_textview);
             which.setBackground(drawable);
 
             midClarity.setBackground(null);
             highClarity.setBackground(null);
-        }else if (i == 1){
+        } else if (i == 1) {
             Drawable drawable = getResources().getDrawable(R.drawable.background_textview);
             which.setBackground(drawable);
 
             lowClarity.setBackground(null);
             highClarity.setBackground(null);
-        }else if (i == 2){
+        } else if (i == 2) {
             Drawable drawable = getResources().getDrawable(R.drawable.background_textview);
             which.setBackground(drawable);
 
@@ -692,35 +761,32 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
             lowClarity.setBackground(null);
         }
 
-
     }
 
-
-
-    Handler handler=new Handler();
-    Runnable runnable=new Runnable() {
+    Handler handler = new Handler();
+    Runnable runnable = new Runnable() {
         @Override
         public void run() {
             // TODO Auto-generated method stub
-            if(clicked == 0) {
+            if (clicked == 0) {
                 //要做的事情
                 hideLayout();
                 return;
-            }else {
-               clicked = 0;
+            } else {
+                clicked = 0;
             }
             handler.postDelayed(runnable, 3000);//每两秒执行一次runnable.
         }
     };
 
-    private void showLayout(){
+    private void showLayout() {
         isShow = 0;
-     //  control.setVisibility(View.VISIBLE);
+        //  control.setVisibility(View.VISIBLE);
         full.setVisibility(View.VISIBLE);
         full.setAnimation(AnimationUtil.moveToViewLocation());
-        if (stretch_flag == false){
-           // danLayout.setVisibility(View.VISIBLE);
-           // danLayout.setAnimation(AnimationUtil.moveToViewLeft());
+        if (stretch_flag == false) {
+            // danLayout.setVisibility(View.VISIBLE);
+            // danLayout.setAnimation(AnimationUtil.moveToViewLeft());
             screenLock.setVisibility(View.VISIBLE);
         }
 
@@ -731,8 +797,9 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
         play.setVisibility(View.VISIBLE);
 
     }
-    private void hideLayout(){
-        isShow = 1 ;
+
+    private void hideLayout() {
+        isShow = 1;
         //control.setVisibility(View.GONE);
         control.setBackgroundColor(Color.parseColor("#00000000"));
         full.setVisibility(View.GONE);
@@ -745,42 +812,40 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
         landLayout.setAnimation(AnimationUtil.moveToViewBottom());
         play.setVisibility(View.GONE);
     }
-    private boolean stretch_flag=true;
+
+    private boolean stretch_flag = true;
     private int selfChange;
 
     /**
-     *
-     * @param REVERSE
-    * 根据角度进行竖屏切换，如果为固定全屏则只能横屏切换
-    *  根据角度进行横屏切换
-     *
+     * @param REVERSE 根据角度进行竖屏切换，如果为固定全屏则只能横屏切换
+     *                根据角度进行横屏切换
      */
-    private void fullScreen(int REVERSE){
-        Log.e("orientation","stretch::"+stretch_flag+"width::"+screenWidth+"::::heght::"+screenHeight);
+    private void fullScreen(int REVERSE) {
+        Log.e("orientation", "stretch::" + stretch_flag + "width::" + screenWidth + "::::heght::" + screenHeight);
         if (stretch_flag) {
 
             stretch_flag = false;
             //切换成横屏
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
             content.setVisibility(View.GONE);
-            if (REVERSE == 0){
+            if (REVERSE == 0) {
                 setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-            }else {
+            } else {
                 setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE);
             }
 
             RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) vView.getLayoutParams();
 
-            params.width=screenHeight ;
-            params.height = screenWidth ;
+            params.width = screenHeight;
+            params.height = screenWidth;
             vView.setLayoutParams(params);
             control.setLayoutParams(params);
             iv.setLayoutParams(params);
-            if (selfChange == 1){
-                currentOrientation = 270 ;
-                selfChange = 0 ;
+            if (selfChange == 1) {
+                currentOrientation = 270;
+                selfChange = 0;
             }
-        }else{
+        } else {
 
             stretch_flag = true;
             //切换成竖屏
@@ -791,31 +856,32 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
 
             content.setVisibility(View.VISIBLE);
             RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) vView.getLayoutParams();
-            params.width=screenWidth ;
-            params.height = DensityUtil.dip2px(Main2Activity.this ,200);
+            params.width = screenWidth;
+            params.height = DensityUtil.dip2px(Main2Activity.this, 200);
             vView.setLayoutParams(params);
             control.setLayoutParams(params);
             iv.setLayoutParams(params);
 
-            if (selfChange == 1){
-                currentOrientation = 0 ;
-                selfChange = 0 ;
+            if (selfChange == 1) {
+                currentOrientation = 0;
+                selfChange = 0;
             }
         }
 
     }
-    public static int  getRealHeight(Context context , int hw) {
-        Log.e("main2activity","getRealHeight");
+
+    public static int getRealHeight(Context context, int hw) {
+        Log.e("main2activity", "getRealHeight");
         WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
         Display display = wm.getDefaultDisplay();
         int screenHeight = 0;
-        int screenWidth = 0 ;
+        int screenWidth = 0;
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
             DisplayMetrics dm = new DisplayMetrics();
             display.getRealMetrics(dm);
             screenHeight = dm.heightPixels;
-            screenWidth = dm.widthPixels ;
+            screenWidth = dm.widthPixels;
 
             //或者也可以使用getRealSize方法
 //      Point size = new Point();
@@ -828,40 +894,42 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
                 DisplayMetrics dm = new DisplayMetrics();
                 display.getMetrics(dm);
                 screenHeight = dm.heightPixels;
-                screenWidth = dm.widthPixels ;
+                screenWidth = dm.widthPixels;
             }
         }
-        if (hw == 0){
+        if (hw == 0) {
             return screenHeight;
-        }else {
+        } else {
             return screenWidth;
         }
 
     }
+
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if ((keyCode == KeyEvent.KEYCODE_BACK)) {
             //返回键
-            if (stretch_flag == false){
+            if (stretch_flag == false) {
                 selfChange = 1;
                 fullScreen(0);
-            }else {
+            } else {
                 finish();
             }
             return false;
-        }else {
+        } else {
             return super.onKeyDown(keyCode, event);
         }
 
     }
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        Log.e("MAin2Activity","onDestory");
+        Log.e("MAin2Activity", "onDestory");
         vView.stopPlayback();
         myOrientoinListener.disable();
         getContentResolver().unregisterContentObserver(contentObserver);
-        currentP = 0 ;
+        currentP = 0;
         if (timer != null) {
             timer.cancel();
             timer = null;
@@ -875,19 +943,20 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
     @Override
     protected void onStop() {
         super.onStop();
-       Log.e("MAin2Activity","onStop");
+        Log.e("MAin2Activity", "onStop");
         if (vView.isPlaying()) {
             vView.pause();
-            stopStatus = 1 ;
-        }else {
-            stopStatus = 0 ;
+            stopStatus = 1;
+        } else {
+            stopStatus = 0;
         }
+        unregisterNetReceiver();
     }
 
     @Override
     protected void onRestart() {
         super.onRestart();
-        Log.e("MAin2Activity","onRestart::"+stopStatus);
+        Log.e("MAin2Activity", "onRestart::" + stopStatus);
         if (stopStatus == 1) {
             vView.start();
         }
@@ -900,20 +969,20 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
             int navigationBarIsMin = Settings.System.getInt(getContentResolver(),
                     "navigationbar_is_min", 0);
             if (navigationBarIsMin == 1) {//导航键隐藏了
-                Log.e("sjdksjdks","导航隐藏");
+                Log.e("sjdksjdks", "导航隐藏");
             } else {//导航键显示了
-                Log.e("sjdksjdks","导航显示");
+                Log.e("sjdksjdks", "导航显示");
             }
         }
     };
 
 
-    private int currentOrientation ;
+    private int currentOrientation;
+
     @Override
     public void onGlobalLayout() {
 
     }
-
 
 
     class MyOrientoinListener extends OrientationEventListener {
@@ -929,8 +998,8 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
         @Override
         public void onOrientationChanged(int orientation) {
 
-          //  int screenOrientation = getResources().getConfiguration().orientation;
-            Log.e("orientation","orientation:::"+orientation+":::current::"+currentOrientation);
+            //  int screenOrientation = getResources().getConfiguration().orientation;
+            Log.e("orientation", "orientation:::" + orientation + ":::current::" + currentOrientation);
 
             if (orientation == OrientationEventListener.ORIENTATION_UNKNOWN) {
                 return;  //手机平放时，检测不到有效的角度
@@ -952,14 +1021,36 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
                     fullScreen(0);
                 }
             } else if (orientation > 260 && orientation < 280) { //270度
-                if (currentOrientation != 270){
-                currentOrientation = 270;
-                fullScreen(0);
+                if (currentOrientation != 270) {
+                    currentOrientation = 270;
+                    fullScreen(0);
                 }
             } else {
-               // Log.d("full", "else");
+                // Log.d("full", "else");
                 return;
             }
+        }
+    }
+
+    /**
+     * 注册网络监听器
+     */
+    private void registerNetReceiver() {
+        if (netChangeReceiver == null) {
+            IntentFilter filter = new IntentFilter(
+                    ConnectivityManager.CONNECTIVITY_ACTION);
+            netChangeReceiver = new NetChangeReceiver();
+            registerReceiver(netChangeReceiver, filter);
+        }
+    }
+
+    /**
+     * 销毁网络监听器
+     */
+    private void unregisterNetReceiver() {
+        if (netChangeReceiver != null) {
+            unregisterReceiver(netChangeReceiver);
+            netChangeReceiver = null;
         }
     }
 
@@ -972,24 +1063,36 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
             } else if (NetUtils.getNetworkType(Main2Activity.this) == 2
                     || NetUtils.getNetworkType(Main2Activity.this) == 4) {// 网络不是手机网络或者是以太网
                 // TODO 更新状态是暂停状态,是否是直播
-               // statusChange(STATUS_PAUSE);
-               // videoView.pause();//暂停播放
-               // updatePausePlay(); //更新播放按钮的图标状态
-               // $.id(com.superplayer.library.R.id.app_video_loading).gone();//加载progressbar隐藏
+                // statusChange(STATUS_PAUSE);
+                vView.pause();//暂停播放
+                updatePausePlay(); //更新播放按钮的图标状态
+                setNetWarn();
+                // $.id(com.superplayer.library.R.id.app_video_loading).gone();//加载progressbar隐藏
                /* onNetChangeListener.onMobile();
                 showStatus(
                         activity.getResources().getString(
                                 com.superplayer.library.R.string.player_not_wifi), "继续");*/ //提示
             } else if (NetUtils.getNetworkType(Main2Activity.this) == 1) {// 网络链接断开
-                onPause();
-               // onNetChangeListener.onDisConnect();
+                //  onPause();
+                // onNetChangeListener.onDisConnect();
+                Log.e("network", "断开");
             } else {
+                Log.e("network", "网络不可用");
                 //onNetChangeListener.onNoAvailable();
             }
         }
     }
 
-
+    private void updatePausePlay() {
+        //将播放按钮设置成暂停状态
+        if (vView.isPlaying()) {
+            play.setImageResource(R.drawable.btn_content_pause_62);
+            controllPLay.setImageResource(R.drawable.icon_pause);
+        } else {
+            play.setImageResource(R.drawable.btn_content_play_62);
+            controllPLay.setImageResource(R.drawable.icon_play);
+        }
+    }
 
 
     /**
@@ -998,6 +1101,7 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
     public interface liveCommentResult {
         void onResult(boolean confirmed, String comment);
     }
+
     public static Bitmap getVideoThumb(String path) {
         MediaMetadataRetriever media = new MediaMetadataRetriever();
         media.setDataSource(path);
