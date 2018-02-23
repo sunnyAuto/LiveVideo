@@ -17,7 +17,6 @@ import android.net.ConnectivityManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Message;
 import android.provider.Settings;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
@@ -32,9 +31,7 @@ import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.PopupWindow;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -45,7 +42,6 @@ import com.pili.pldroid.player.PlayerState;
 import com.pili.pldroid.player.widget.PLVideoTextureView;
 import com.sunxiao.mathapplication.Utils.AnimationUtil;
 import com.sunxiao.mathapplication.Utils.NetUtils;
-import com.sunxiao.mathapplication.Utils.ScreenImproveUtils;
 import com.sunxiao.mathapplication.Utils.ScreenSwitchUtils;
 import com.sunxiao.mathapplication.View.BrightnessHelper;
 import com.sunxiao.mathapplication.View.CommentDialog;
@@ -55,7 +51,6 @@ import com.sunxiao.mathapplication.controller.DensityUtil;
 import com.sunxiao.mathapplication.controller.LoadingView;
 import com.sunxiao.mathapplication.manager.FloatWindowManager;
 import com.sunxiao.mathapplication.manager.FloatWindowPermissionChecker;
-import com.superplayer.library.SuperPlayer;
 
 import java.util.Formatter;
 import java.util.Locale;
@@ -73,7 +68,8 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
     private int landPort;
     private RelativeLayout backLayout, danLayout, landLayout, fullLayout;
     private VideoGestureRelativeLayout control;
-    private int isShow, clicked;
+    private int  clicked;
+    private boolean isShow = true;
     private RelativeLayout btnLayout, content;
     private int screenWidth, screenHeight;
     public static int videoKind;
@@ -118,6 +114,9 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
     private RelativeLayout replayLayout, netWarnLayout;//重新播放，网络变化提醒
     private TextView warnTxt, warnPlay, replayTxt;
     private ImageView replayBtn;
+    //private boolean isLive ;
+    private boolean isLocked ;
+    private boolean isMobile ;//移动网络
 
 
     @Override
@@ -332,7 +331,7 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
                         }, 500);
                         updateCurrrent();
 
-                        hideLayout();
+                        updateControl();
                         //  isShow = 1;
                     }
                 }
@@ -399,6 +398,7 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
                         case MotionEvent.ACTION_DOWN:
                             //每次按下的时候更新当前亮度和音量，还有进度
                             //  oldProgress = newProgress;
+                            Log.e("isShow","down::"+isShow);
                             oldProgress = seekBar.getProgress();
                             // Log.e("progress","oldProgress::"+oldProgress+":::sekbar::"+seekBar.getProgress()+"max:::"+seekBar.getMax());
                             oldVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
@@ -417,8 +417,10 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
                                 //手势布局右侧
                                 isLeft = false;
                             }
+
                             break;
                         case MotionEvent.ACTION_MOVE:
+                            if (!isLocked){
                             //判断上下还是左右
                             if (Math.abs(event.getY() - startY) > 30) {
                                 isMoved = true;
@@ -449,19 +451,24 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
                                     }
                                 }
                             }
+                            }else {
+
+                            }
                             break;
                         case MotionEvent.ACTION_UP:
-                            if (isMoved == false) {
-                                if (isShow == 0) {
-                                    hideLayout();
+                            Log.e("isShow","isShow::"+isShow);
+                            if (!isMoved) {
+                                if (isShow) {
+                                    updateControl();
                                     handler.removeCallbacks(runnable);
                                 } else {
                                     //隐藏
-                                    showLayout();
+                                    updateControl();
                                     handler.postDelayed(runnable, 3000);//每三秒执行一次runnable.
                                 }
                             } else {
                                 isMoved = false;
+                                updateControl();
                             }
                             break;
                     }
@@ -724,19 +731,40 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
                 case R.id.replay_button :
                     break;
                 case R.id.warn_play_button :
+                    if (isMobile){
+                        unregisterNetReceiver();
+                        vView.start();
+                        updatePausePlay();
+                        netWarnLayout.setVisibility(View.GONE);
+                    }
+                    break;
+                case R.id.lock_touch :
+                    updateLock();
                     break;
 
             }
         }
     };
+    private void updateLock(){
+        if (isLocked){
+            isLocked = false ;
+            screenLock.setImageResource(R.drawable.icon_lock_open);
+        }else {
+            isLocked = true ;
+            screenLock.setImageResource(R.drawable.icon_lock);
+            updateControl();
+        }
+    }
     private void setRePlay(){
         replayLayout.setVisibility(View.VISIBLE);
         replayTxt.setText("");
 
     }
-    private void setNetWarn(){
+    private void setNetWarn(String msg , String btnMsg){
         netWarnLayout.setVisibility(View.VISIBLE);
-        hideLayout();
+        warnTxt.setText(msg);
+        warnPlay.setText(btnMsg);
+       updateControl();
     }
 
     //切换不同清晰度的视频
@@ -744,21 +772,23 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
         if (i == 0) {
             Drawable drawable = getResources().getDrawable(R.drawable.background_textview);
             which.setBackground(drawable);
-
             midClarity.setBackground(null);
             highClarity.setBackground(null);
+            changeClarityLayout.setVisibility(View.GONE);
         } else if (i == 1) {
             Drawable drawable = getResources().getDrawable(R.drawable.background_textview);
             which.setBackground(drawable);
 
             lowClarity.setBackground(null);
             highClarity.setBackground(null);
+            changeClarityLayout.setVisibility(View.GONE);
         } else if (i == 2) {
             Drawable drawable = getResources().getDrawable(R.drawable.background_textview);
             which.setBackground(drawable);
 
             midClarity.setBackground(null);
             lowClarity.setBackground(null);
+            changeClarityLayout.setVisibility(View.GONE);
         }
 
     }
@@ -770,7 +800,7 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
             // TODO Auto-generated method stub
             if (clicked == 0) {
                 //要做的事情
-                hideLayout();
+                updateControl();
                 return;
             } else {
                 clicked = 0;
@@ -779,38 +809,47 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
         }
     };
 
-    private void showLayout() {
-        isShow = 0;
-        //  control.setVisibility(View.VISIBLE);
-        full.setVisibility(View.VISIBLE);
-        full.setAnimation(AnimationUtil.moveToViewLocation());
-        if (stretch_flag == false) {
-            // danLayout.setVisibility(View.VISIBLE);
-            // danLayout.setAnimation(AnimationUtil.moveToViewLeft());
-            screenLock.setVisibility(View.VISIBLE);
+
+    private void updateControl(){
+
+        if (isShow){//显示
+           isShow = false ;
+            //是显示状态，隐藏掉
+
+              //  control.setBackgroundColor(Color.parseColor("#00000000"));
+                full.setVisibility(View.GONE);
+               // full.setAnimation(AnimationUtil.moveToViewBottom());
+                danLayout.setVisibility(View.GONE);
+               // danLayout.setAnimation(AnimationUtil.moveToViewRight());
+                backLayout.setVisibility(View.GONE);
+              //  backLayout.setAnimation(AnimationUtil.upMoveToViewLocation());
+                landLayout.setVisibility(View.GONE);
+               // landLayout.setAnimation(AnimationUtil.moveToViewBottom());
+                play.setVisibility(View.GONE);
+                screenLock.setVisibility(View.GONE);
+        }else {//隐藏
+            isShow = true ;
+            if (!isLocked) {
+                //  control.setVisibility(View.VISIBLE);
+                full.setVisibility(View.VISIBLE);
+                full.setAnimation(AnimationUtil.moveToViewLocation());
+                if (stretch_flag == false) {
+                    // danLayout.setVisibility(View.VISIBLE);
+                    // danLayout.setAnimation(AnimationUtil.moveToViewLeft());
+                    screenLock.setVisibility(View.VISIBLE);
+                }
+                backLayout.setVisibility(View.VISIBLE);
+                backLayout.setAnimation(AnimationUtil.downMoveToViewLocation());
+                landLayout.setVisibility(View.VISIBLE);
+                landLayout.setAnimation(AnimationUtil.moveToViewLocation());
+                play.setVisibility(View.VISIBLE);
+                if (!stretch_flag){
+                    screenLock.setVisibility(View.VISIBLE);
+                }
+            }else {
+                screenLock.setVisibility(View.VISIBLE);
+            }
         }
-
-        backLayout.setVisibility(View.VISIBLE);
-        backLayout.setAnimation(AnimationUtil.downMoveToViewLocation());
-        landLayout.setVisibility(View.VISIBLE);
-        landLayout.setAnimation(AnimationUtil.moveToViewLocation());
-        play.setVisibility(View.VISIBLE);
-
-    }
-
-    private void hideLayout() {
-        isShow = 1;
-        //control.setVisibility(View.GONE);
-        control.setBackgroundColor(Color.parseColor("#00000000"));
-        full.setVisibility(View.GONE);
-        full.setAnimation(AnimationUtil.moveToViewBottom());
-        danLayout.setVisibility(View.GONE);
-        danLayout.setAnimation(AnimationUtil.moveToViewRight());
-        backLayout.setVisibility(View.GONE);
-        backLayout.setAnimation(AnimationUtil.upMoveToViewLocation());
-        landLayout.setVisibility(View.GONE);
-        landLayout.setAnimation(AnimationUtil.moveToViewBottom());
-        play.setVisibility(View.GONE);
     }
 
     private boolean stretch_flag = true;
@@ -821,13 +860,17 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
      *                根据角度进行横屏切换
      */
     private void fullScreen(int REVERSE) {
-        Log.e("orientation", "stretch::" + stretch_flag + "width::" + screenWidth + "::::heght::" + screenHeight);
+        Log.e("orientation", "stretch::" + isShow);
         if (stretch_flag) {
 
             stretch_flag = false;
             //切换成横屏
+            full.setImageResource(R.drawable.icon_narrow_player_right);
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
             content.setVisibility(View.GONE);
+            if (isShow){
+                updateControl();
+            }
             if (REVERSE == 0) {
                 setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
             } else {
@@ -846,8 +889,9 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
                 selfChange = 0;
             }
         } else {
-
             stretch_flag = true;
+            full.setImageResource(R.drawable.icon_large_player_right);
+            screenLock.setVisibility(View.GONE);
             //切换成竖屏
             getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN); //显示状态栏
             danLayout.setVisibility(View.GONE);
@@ -912,6 +956,8 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
             if (stretch_flag == false) {
                 selfChange = 1;
                 fullScreen(0);
+                isLocked = false ;
+                screenLock.setVisibility(View.GONE);
             } else {
                 finish();
             }
@@ -943,7 +989,6 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
     @Override
     protected void onStop() {
         super.onStop();
-        Log.e("MAin2Activity", "onStop");
         if (vView.isPlaying()) {
             vView.pause();
             stopStatus = 1;
@@ -999,36 +1044,44 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
         public void onOrientationChanged(int orientation) {
 
             //  int screenOrientation = getResources().getConfiguration().orientation;
-            Log.e("orientation", "orientation:::" + orientation + ":::current::" + currentOrientation);
+            int isRotate = 0;
+            try {
+               isRotate = Settings.System.getInt(getContentResolver(), Settings.System.ACCELEROMETER_ROTATION);
+            } catch (Settings.SettingNotFoundException e) {
+                e.printStackTrace();
+            }
+           if (isRotate == 1) {
 
-            if (orientation == OrientationEventListener.ORIENTATION_UNKNOWN) {
-                return;  //手机平放时，检测不到有效的角度
-            }
-            //只检测是否有四个角度的改变
-            if (orientation > 350 || orientation < 10) { //0度
-                if (currentOrientation != 0) {
-                    currentOrientation = 0;
-                    fullScreen(0);
-                }
-            } else if (orientation > 80 && orientation < 100) { //90度
-                if (currentOrientation != 90) {
-                    currentOrientation = 90;
-                    fullScreen(1);
-                }
-            } else if (orientation > 170 && orientation < 190) { //180度
-                if (currentOrientation != 180) {
-                    currentOrientation = 180;
-                    fullScreen(0);
-                }
-            } else if (orientation > 260 && orientation < 280) { //270度
-                if (currentOrientation != 270) {
-                    currentOrientation = 270;
-                    fullScreen(0);
-                }
-            } else {
-                // Log.d("full", "else");
-                return;
-            }
+               if (orientation == OrientationEventListener.ORIENTATION_UNKNOWN) {
+                   return;  //手机平放时，检测不到有效的角度
+               }
+               //只检测是否有四个角度的改变
+               if (orientation > 350 || orientation < 10) { //0度
+                   if (currentOrientation != 0) {
+                       currentOrientation = 0;
+                       fullScreen(0);
+                   }
+               } else if (orientation > 80 && orientation < 100) { //90度
+                   if (currentOrientation != 90) {
+                       currentOrientation = 90;
+                       fullScreen(1);
+                   }
+               } else if (orientation > 170 && orientation < 190) { //180度
+                   if (currentOrientation != 180) {
+                       currentOrientation = 180;
+                       fullScreen(0);
+                   }
+               } else if (orientation > 260 && orientation < 280) { //270度
+                   if (currentOrientation != 270) {
+                       currentOrientation = 270;
+                       fullScreen(0);
+                   }
+               } else {
+                   // Log.d("full", "else");
+                   return;
+               }
+           }
+
         }
     }
 
@@ -1064,9 +1117,10 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
                     || NetUtils.getNetworkType(Main2Activity.this) == 4) {// 网络不是手机网络或者是以太网
                 // TODO 更新状态是暂停状态,是否是直播
                 // statusChange(STATUS_PAUSE);
+                isMobile = true ;
                 vView.pause();//暂停播放
                 updatePausePlay(); //更新播放按钮的图标状态
-                setNetWarn();
+                setNetWarn("播放将消耗48MB流量","继续播放");
                 // $.id(com.superplayer.library.R.id.app_video_loading).gone();//加载progressbar隐藏
                /* onNetChangeListener.onMobile();
                 showStatus(
@@ -1075,8 +1129,12 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
             } else if (NetUtils.getNetworkType(Main2Activity.this) == 1) {// 网络链接断开
                 //  onPause();
                 // onNetChangeListener.onDisConnect();
+                setNetWarn("网络错误","重试");
+                currentP = vView.getCurrentPosition();
                 Log.e("network", "断开");
             } else {
+                setNetWarn("网络错误","重试");
+                currentP = vView.getCurrentPosition();
                 Log.e("network", "网络不可用");
                 //onNetChangeListener.onNoAvailable();
             }

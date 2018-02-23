@@ -62,15 +62,16 @@
                 android:id="@+id/back_layout"
                 android:layout_width="match_parent"
                 android:layout_height="30dp"
-                android:background="#00000000"
-                android:visibility="gone">
+                android:background="#4d000000"
+                android:visibility="visible">
 
                 <ImageView
                     android:id="@+id/back"
                     android:layout_width="40dp"
-                    android:layout_height="20dp"
+                    android:layout_height="23dp"
+                    android:padding="5dp"
                     android:layout_centerVertical="true"
-                    android:src="@drawable/jz_back_normal"
+                    android:src="@drawable/icon_back_left"
                     />
 
                 <TextView
@@ -83,19 +84,18 @@
 
                 <ImageView
                     android:id="@+id/share_btn"
-                    android:layout_width="30dp"
-                    android:layout_height="30dp"
+                    android:layout_width="25dp"
+                    android:layout_height="23dp"
                     android:layout_alignParentRight="true"
                     android:layout_centerVertical="true"
                     android:padding="5dp"
-                    android:src="@drawable/ic_share"/>
+                    android:src="@drawable/icon_player_right"/>
             </RelativeLayout>
 
             <RelativeLayout
                 android:id="@+id/net_changed_warn"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-
                 android:background="#4d000000"
                 android:visibility="gone">
 
@@ -174,7 +174,7 @@
                 android:layout_alignParentBottom="true"
                 android:layout_alignParentStart="true"
                 android:background="#4d000000"
-                android:visibility="gone">
+                android:visibility="visible">
 
                 <ImageView
                     android:id="@+id/app_video_play"
@@ -225,8 +225,8 @@
                     android:layout_height="30dp"
                     android:layout_alignParentBottom="true"
                     android:layout_alignParentRight="true"
-                    android:padding="5dp"
-                    android:src="@drawable/ic_enlarge"/>
+                    android:padding="9dp"
+                    android:src="@drawable/icon_large_player_right"/>
             </RelativeLayout>
 
             <ImageView
