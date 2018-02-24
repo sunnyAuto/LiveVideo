@@ -32,6 +32,7 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -52,7 +53,9 @@ import com.sunxiao.mathapplication.controller.LoadingView;
 import com.sunxiao.mathapplication.manager.FloatWindowManager;
 import com.sunxiao.mathapplication.manager.FloatWindowPermissionChecker;
 
+import java.util.ArrayList;
 import java.util.Formatter;
+import java.util.List;
 import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -68,7 +71,7 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
     private int landPort;
     private RelativeLayout backLayout, danLayout, landLayout, fullLayout;
     private VideoGestureRelativeLayout control;
-    private int  clicked;
+    private int clicked;
     private boolean isShow = true;
     private RelativeLayout btnLayout, content;
     private int screenWidth, screenHeight;
@@ -107,7 +110,8 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
     private int stopStatus = 0;
     private long max = 0;
     private TextView changeClarity;
-    private RelativeLayout shareLayout, changeClarityLayout;
+    private RelativeLayout shareLayout;
+    private LinearLayout changeClarityLayout;
     private TextView lowClarity, midClarity, highClarity;
     private ImageView controllPLay;
     private NetChangeReceiver netChangeReceiver;
@@ -115,8 +119,10 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
     private TextView warnTxt, warnPlay, replayTxt;
     private ImageView replayBtn;
     //private boolean isLive ;
-    private boolean isLocked ;
-    private boolean isMobile ;//移动网络
+    private boolean isLocked;
+    private boolean isMobile;//移动网络
+    private boolean clarityShow; //切换清晰度显示
+    private List<ClarityBean> list = new ArrayList<>();
 
 
     @Override
@@ -230,9 +236,16 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
 
     private void initIntent() {
         Intent intent = getIntent();
-        videoKind = intent.getIntExtra("kind", 1);
+        list = (List<ClarityBean>)intent.getSerializableExtra("url");
+        Log.e("lllllll","size::"+intent.getSerializableExtra("url"));
+        /*videoKind = intent.getIntExtra("kind", 1);
         videoPath = intent.getStringExtra("path");
+        vView.setVideoPath(videoPath);*/
+        videoKind = list.get(0).getIsLive();
+        videoPath = list.get(0).getVideoPath();
+        changeClarity.setText(list.get(0).getClarityKinds());
         vView.setVideoPath(videoPath);
+        getDiffentClarity();
         vView.setDisplayAspectRatio(PLVideoTextureView.ASPECT_RATIO_FIT_PARENT);
         if (videoKind == 1) {
             isLive = true;
@@ -247,6 +260,17 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
 
         } else {
 
+        }
+
+    }
+    private void getDiffentClarity(){
+        if (list.size()>0){
+            for (int i = 0; i < list.size(); i++) {
+                TextView tv = new TextView(this);
+                tv.setText(list.get(i).getClarityKinds());
+                tv.setTextColor(Color.parseColor("#ffffff"));
+                changeClarityLayout.addView(tv);
+            }
         }
     }
 
@@ -311,7 +335,6 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
             @Override
             public void onPrepared(PLMediaPlayer plMediaPlayer, int i) {
                 //视频开启播放后, 触发的监听器
-                Log.e("PPPPP", "PREPAREED");
                 max = vView.getDuration();
                 totalTime.setText(stringForTime(max));
                 seekBar.setMax((int) max);
@@ -341,10 +364,11 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
         vView.setOnCompletionListener(new PLMediaPlayer.OnCompletionListener() {
             @Override
             public void onCompletion(PLMediaPlayer plMediaPlayer) {
-                // Log.e("complete","complete");
+                 Log.e("complete","complete");
                 //完成播放
                 //  play.setImageResource(R.drawable.jz_play_normal);
                 updatePausePlay();
+                updateReplay();
             }
         });
         vView.setOnSeekCompleteListener(new PLMediaPlayer.OnSeekCompleteListener() {
@@ -398,7 +422,7 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
                         case MotionEvent.ACTION_DOWN:
                             //每次按下的时候更新当前亮度和音量，还有进度
                             //  oldProgress = newProgress;
-                            Log.e("isShow","down::"+isShow);
+                            Log.e("isShow", "down::" + isShow);
                             oldProgress = seekBar.getProgress();
                             // Log.e("progress","oldProgress::"+oldProgress+":::sekbar::"+seekBar.getProgress()+"max:::"+seekBar.getMax());
                             oldVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
@@ -420,55 +444,59 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
 
                             break;
                         case MotionEvent.ACTION_MOVE:
-                            if (!isLocked){
-                            //判断上下还是左右
-                            if (Math.abs(event.getY() - startY) > 30) {
-                                isMoved = true;
-                                if (isLeft) {
-                                    //调亮度
-                                    if ((event.getY() - startY) > 0) {
-                                        //升高
-                                        controlLight(startY - event.getY());
+                            if (!isLocked) {
+                                //判断上下还是左右
+                                if (Math.abs(event.getY() - startY) > 30) {
+                                    isMoved = true;
+                                    if (isLeft) {
+                                        //调亮度
+                                        if ((event.getY() - startY) > 0) {
+                                            //升高
+                                            controlLight(startY - event.getY());
+                                        } else {
+                                            //降低
+                                            controlLight(startY - event.getY());
+                                        }
                                     } else {
-                                        //降低
-                                        controlLight(startY - event.getY());
+                                        //调声音
+                                        if ((event.getY() - startY) > 0) {
+                                            //升高
+                                            controlVoice(startY - event.getY());
+                                        } else {
+                                            //降低
+                                            controlVoice(startY - event.getY());
+                                        }
                                     }
                                 } else {
-                                    //调声音
-                                    if ((event.getY() - startY) > 0) {
-                                        //升高
-                                        controlVoice(startY - event.getY());
-                                    } else {
-                                        //降低
-                                        controlVoice(startY - event.getY());
+                                    if (isLive == false) {
+                                        if (Math.abs(event.getX() - startX) > 10) {
+                                            isMoved = true;
+                                            controlProgress(event.getX() - startX);
+                                        }
                                     }
                                 }
                             } else {
-                                if (isLive == false) {
-                                    if (Math.abs(event.getX() - startX) > 10) {
-                                        isMoved = true;
-                                        controlProgress(event.getX() - startX);
-                                    }
-                                }
-                            }
-                            }else {
 
                             }
                             break;
                         case MotionEvent.ACTION_UP:
-                            Log.e("isShow","isShow::"+isShow);
-                            if (!isMoved) {
-                                if (isShow) {
-                                    updateControl();
-                                    handler.removeCallbacks(runnable);
+                            if (!clarityShow) {
+                                if (!isMoved) {
+                                    if (isShow) {
+                                        updateControl();
+                                        handler.removeCallbacks(runnable);
+                                    } else {
+                                        //隐藏
+                                        updateControl();
+                                        handler.postDelayed(runnable, 3000);//每三秒执行一次runnable.
+                                    }
                                 } else {
-                                    //隐藏
+                                    isMoved = false;
                                     updateControl();
-                                    handler.postDelayed(runnable, 3000);//每三秒执行一次runnable.
                                 }
                             } else {
-                                isMoved = false;
-                                updateControl();
+                                changeClarityLayout.setVisibility(View.GONE);
+                                clarityShow = false;
                             }
                             break;
                     }
@@ -487,7 +515,7 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
         startFlow2.setOnClickListener(l);
 
         shareLayout = (RelativeLayout) findViewById(R.id.layout_share_to);
-        changeClarityLayout = (RelativeLayout) findViewById(R.id.layout_change_clarity);
+        changeClarityLayout = (LinearLayout) findViewById(R.id.layout_change_clarity);
         lowClarity = (TextView) findViewById(R.id.low_clarity);
         lowClarity.setOnClickListener(l);
         midClarity = (TextView) findViewById(R.id.middle_clarity);
@@ -512,6 +540,12 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
     //获取有几种不同的清晰度
     private void setClartityBtnText() {
 
+    }
+    private void updateReplay(){
+        replayLayout.setVisibility(View.VISIBLE);
+        if (isShow){
+            updateControl();
+        }
     }
 
     private void updateCurrrent() {
@@ -638,6 +672,14 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
                     } else {
                         if (firstPlay == 0) {
                             firstPlay = 1;
+                            if (isShow) {
+                                updateControl();
+                                handler.removeCallbacks(runnable);
+                            } else {
+                                //隐藏
+                                updateControl();
+                                handler.postDelayed(runnable, 3000);//每三秒执行一次runnable.
+                            }
                         }
                         // play.setImageResource(R.drawable.jz_pause_normal);
                         played = 1;
@@ -716,7 +758,14 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
                     }
                     break;
                 case R.id.switch_clarity_button:
-                    changeClarityLayout.setVisibility(changeClarityLayout.getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE);
+                    //changeClarityLayout.setVisibility(changeClarityLayout.getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE);
+                    if (clarityShow) {
+                        changeClarityLayout.setVisibility(View.GONE);
+                        clarityShow = false;
+                    } else {
+                        changeClarityLayout.setVisibility(View.VISIBLE);
+                        clarityShow = true;
+                    }
                     break;
                 case R.id.low_clarity:
                     changeClar(lowClarity, 0);
@@ -728,43 +777,51 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
                     changeClar(highClarity, 2);
                     break;
 
-                case R.id.replay_button :
+                case R.id.replay_button:
+                    vView.start();
+                    replayLayout.setVisibility(View.GONE);
+                    play.setImageResource(R.drawable.btn_content_pause_62);
+                    controllPLay.setImageResource(R.drawable.icon_pause);
                     break;
-                case R.id.warn_play_button :
-                    if (isMobile){
+                case R.id.warn_play_button:
+                    if (isMobile) {
                         unregisterNetReceiver();
                         vView.start();
                         updatePausePlay();
                         netWarnLayout.setVisibility(View.GONE);
                     }
                     break;
-                case R.id.lock_touch :
+                case R.id.lock_touch:
                     updateLock();
                     break;
 
             }
         }
     };
-    private void updateLock(){
-        if (isLocked){
-            isLocked = false ;
+
+    private void updateLock() {
+        if (isLocked) {
+            isLocked = false;
             screenLock.setImageResource(R.drawable.icon_lock_open);
-        }else {
-            isLocked = true ;
+            //updateControl();
+        } else {
+            isLocked = true;
             screenLock.setImageResource(R.drawable.icon_lock);
             updateControl();
         }
     }
-    private void setRePlay(){
+
+    private void setRePlay() {
         replayLayout.setVisibility(View.VISIBLE);
         replayTxt.setText("");
 
     }
-    private void setNetWarn(String msg , String btnMsg){
+
+    private void setNetWarn(String msg, String btnMsg) {
         netWarnLayout.setVisibility(View.VISIBLE);
         warnTxt.setText(msg);
         warnPlay.setText(btnMsg);
-       updateControl();
+        updateControl();
     }
 
     //切换不同清晰度的视频
@@ -775,6 +832,7 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
             midClarity.setBackground(null);
             highClarity.setBackground(null);
             changeClarityLayout.setVisibility(View.GONE);
+            clarityShow = false;
         } else if (i == 1) {
             Drawable drawable = getResources().getDrawable(R.drawable.background_textview);
             which.setBackground(drawable);
@@ -782,6 +840,7 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
             lowClarity.setBackground(null);
             highClarity.setBackground(null);
             changeClarityLayout.setVisibility(View.GONE);
+            clarityShow = false;
         } else if (i == 2) {
             Drawable drawable = getResources().getDrawable(R.drawable.background_textview);
             which.setBackground(drawable);
@@ -789,6 +848,7 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
             midClarity.setBackground(null);
             lowClarity.setBackground(null);
             changeClarityLayout.setVisibility(View.GONE);
+            clarityShow = false;
         }
 
     }
@@ -805,30 +865,45 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
             } else {
                 clicked = 0;
             }
-            handler.postDelayed(runnable, 3000);//每两秒执行一次runnable.
+            handler.postDelayed(runnable, 3000);//每san秒执行一次runnable.
         }
     };
 
 
-    private void updateControl(){
+    private void updateControl() {
 
-        if (isShow){//显示
-           isShow = false ;
+        if (isShow) {//隐藏
+            isShow = false;
             //是显示状态，隐藏掉
-
-              //  control.setBackgroundColor(Color.parseColor("#00000000"));
+            if (!isLocked) {
+                control.setBackgroundColor(Color.parseColor("#00000000"));
                 full.setVisibility(View.GONE);
-               // full.setAnimation(AnimationUtil.moveToViewBottom());
+                full.setAnimation(AnimationUtil.moveToViewBottom());
                 danLayout.setVisibility(View.GONE);
-               // danLayout.setAnimation(AnimationUtil.moveToViewRight());
+                danLayout.setAnimation(AnimationUtil.moveToViewRight());
                 backLayout.setVisibility(View.GONE);
-              //  backLayout.setAnimation(AnimationUtil.upMoveToViewLocation());
+                backLayout.setAnimation(AnimationUtil.upMoveToViewLocation());
                 landLayout.setVisibility(View.GONE);
-               // landLayout.setAnimation(AnimationUtil.moveToViewBottom());
+                landLayout.setAnimation(AnimationUtil.moveToViewBottom());
                 play.setVisibility(View.GONE);
                 screenLock.setVisibility(View.GONE);
-        }else {//隐藏
-            isShow = true ;
+            } else {
+                //  control.setBackgroundColor(Color.parseColor("#00000000"));
+                full.setVisibility(View.GONE);
+                // full.setAnimation(AnimationUtil.moveToViewBottom());
+                danLayout.setVisibility(View.GONE);
+                // danLayout.setAnimation(AnimationUtil.moveToViewRight());
+                backLayout.setVisibility(View.GONE);
+                //  backLayout.setAnimation(AnimationUtil.upMoveToViewLocation());
+                landLayout.setVisibility(View.GONE);
+                // landLayout.setAnimation(AnimationUtil.moveToViewBottom());
+                play.setVisibility(View.GONE);
+                screenLock.setVisibility(View.GONE);
+            }
+
+        } else {//显示
+            isShow = true;
+
             if (!isLocked) {
                 //  control.setVisibility(View.VISIBLE);
                 full.setVisibility(View.VISIBLE);
@@ -840,13 +915,15 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
                 }
                 backLayout.setVisibility(View.VISIBLE);
                 backLayout.setAnimation(AnimationUtil.downMoveToViewLocation());
-                landLayout.setVisibility(View.VISIBLE);
-                landLayout.setAnimation(AnimationUtil.moveToViewLocation());
+                if (firstPlay == 1) {
+                    landLayout.setVisibility(View.VISIBLE);
+                    landLayout.setAnimation(AnimationUtil.moveToViewLocation());
+                }
                 play.setVisibility(View.VISIBLE);
-                if (!stretch_flag){
+                if (!stretch_flag) {
                     screenLock.setVisibility(View.VISIBLE);
                 }
-            }else {
+            } else {
                 screenLock.setVisibility(View.VISIBLE);
             }
         }
@@ -868,7 +945,7 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
             full.setImageResource(R.drawable.icon_narrow_player_right);
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
             content.setVisibility(View.GONE);
-            if (isShow){
+            if (isShow) {
                 updateControl();
             }
             if (REVERSE == 0) {
@@ -956,7 +1033,7 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
             if (stretch_flag == false) {
                 selfChange = 1;
                 fullScreen(0);
-                isLocked = false ;
+                isLocked = false;
                 screenLock.setVisibility(View.GONE);
             } else {
                 finish();
@@ -1046,41 +1123,41 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
             //  int screenOrientation = getResources().getConfiguration().orientation;
             int isRotate = 0;
             try {
-               isRotate = Settings.System.getInt(getContentResolver(), Settings.System.ACCELEROMETER_ROTATION);
+                isRotate = Settings.System.getInt(getContentResolver(), Settings.System.ACCELEROMETER_ROTATION);
             } catch (Settings.SettingNotFoundException e) {
                 e.printStackTrace();
             }
-           if (isRotate == 1) {
+            if (isRotate == 1) {
 
-               if (orientation == OrientationEventListener.ORIENTATION_UNKNOWN) {
-                   return;  //手机平放时，检测不到有效的角度
-               }
-               //只检测是否有四个角度的改变
-               if (orientation > 350 || orientation < 10) { //0度
-                   if (currentOrientation != 0) {
-                       currentOrientation = 0;
-                       fullScreen(0);
-                   }
-               } else if (orientation > 80 && orientation < 100) { //90度
-                   if (currentOrientation != 90) {
-                       currentOrientation = 90;
-                       fullScreen(1);
-                   }
-               } else if (orientation > 170 && orientation < 190) { //180度
-                   if (currentOrientation != 180) {
-                       currentOrientation = 180;
-                       fullScreen(0);
-                   }
-               } else if (orientation > 260 && orientation < 280) { //270度
-                   if (currentOrientation != 270) {
-                       currentOrientation = 270;
-                       fullScreen(0);
-                   }
-               } else {
-                   // Log.d("full", "else");
-                   return;
-               }
-           }
+                if (orientation == OrientationEventListener.ORIENTATION_UNKNOWN) {
+                    return;  //手机平放时，检测不到有效的角度
+                }
+                //只检测是否有四个角度的改变
+                if (orientation > 350 || orientation < 10) { //0度
+                    if (currentOrientation != 0) {
+                        currentOrientation = 0;
+                        fullScreen(0);
+                    }
+                } else if (orientation > 80 && orientation < 100) { //90度
+                    if (currentOrientation != 90) {
+                        currentOrientation = 90;
+                        fullScreen(1);
+                    }
+                } else if (orientation > 170 && orientation < 190) { //180度
+                    if (currentOrientation != 180) {
+                        currentOrientation = 180;
+                        fullScreen(0);
+                    }
+                } else if (orientation > 260 && orientation < 280) { //270度
+                    if (currentOrientation != 270) {
+                        currentOrientation = 270;
+                        fullScreen(0);
+                    }
+                } else {
+                    // Log.d("full", "else");
+                    return;
+                }
+            }
 
         }
     }
@@ -1117,10 +1194,10 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
                     || NetUtils.getNetworkType(Main2Activity.this) == 4) {// 网络不是手机网络或者是以太网
                 // TODO 更新状态是暂停状态,是否是直播
                 // statusChange(STATUS_PAUSE);
-                isMobile = true ;
+                isMobile = true;
                 vView.pause();//暂停播放
                 updatePausePlay(); //更新播放按钮的图标状态
-                setNetWarn("播放将消耗48MB流量","继续播放");
+                setNetWarn("播放将消耗48MB流量", "继续播放");
                 // $.id(com.superplayer.library.R.id.app_video_loading).gone();//加载progressbar隐藏
                /* onNetChangeListener.onMobile();
                 showStatus(
@@ -1129,11 +1206,11 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
             } else if (NetUtils.getNetworkType(Main2Activity.this) == 1) {// 网络链接断开
                 //  onPause();
                 // onNetChangeListener.onDisConnect();
-                setNetWarn("网络错误","重试");
+                setNetWarn("网络错误", "重试");
                 currentP = vView.getCurrentPosition();
                 Log.e("network", "断开");
             } else {
-                setNetWarn("网络错误","重试");
+                setNetWarn("网络错误", "重试");
                 currentP = vView.getCurrentPosition();
                 Log.e("network", "网络不可用");
                 //onNetChangeListener.onNoAvailable();
