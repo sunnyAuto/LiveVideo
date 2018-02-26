@@ -9,6 +9,7 @@ import java.io.Serializable;
 public class ClarityBean implements Serializable{
     private String videoPath ;
     private String clarityKinds ;
+    private int defaultClarity ;
     private int isLive ;
 
     @Override
@@ -43,5 +44,12 @@ public class ClarityBean implements Serializable{
 
     public void setClarityKinds(String clarityKinds) {
         this.clarityKinds = clarityKinds;
+    }
+    private int getDefaultClarity() {
+        return defaultClarity;
+    }
+
+    public void setDefaultClarity(int defaultClarity) {
+        this.defaultClarity = defaultClarity;
     }
 }

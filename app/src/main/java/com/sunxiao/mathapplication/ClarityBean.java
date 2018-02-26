@@ -10,6 +10,15 @@ public class ClarityBean implements Serializable{
     private String videoPath ;
     private String clarityKinds ;
     private int isLive ;
+    private int defaultClarity ;
+
+    public int getDefaultClarity() {
+        return defaultClarity;
+    }
+
+    public void setDefaultClarity(int defaultClarity) {
+        this.defaultClarity = defaultClarity;
+    }
 
     @Override
     public String toString() {

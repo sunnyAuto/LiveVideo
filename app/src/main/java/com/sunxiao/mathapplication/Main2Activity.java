@@ -18,8 +18,11 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.Settings;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
@@ -27,6 +30,7 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.OrientationEventListener;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.view.WindowManager;
@@ -36,6 +40,7 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.pili.pldroid.player.AVOptions;
 import com.pili.pldroid.player.PLMediaPlayer;
@@ -123,6 +128,12 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
     private boolean isMobile;//移动网络
     private boolean clarityShow; //切换清晰度显示
     private List<ClarityBean> list = new ArrayList<>();
+    private RecyclerView rView ;
+    private RecyclerGridViewAdapter recyclerGridViewAdapter ;
+    private String[] data = {"能见会议直播视频一", "能见会议直播视频一", "能见会议直播视频一", "能见会议直播视频一",
+            "能见会议直播视频一", "能见会议直播视频一", "能见会议直播视频一"};
+    private int[] imgdata = {R.drawable.grsm, R.drawable.grsm, R.drawable.grsm, R.drawable.grsm,
+            R.drawable.grsm, R.drawable.grsm, R.drawable.grsm,};
 
 
     @Override
@@ -263,15 +274,56 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
         }
 
     }
-    private void getDiffentClarity(){
+    private void getDiffentClarity(){//获取多个清晰度的视频，并添加切换清晰度按钮
         if (list.size()>0){
+            LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            layoutParams.setMargins(0,10,0,10);//4个参数按顺序分别是左上右下
             for (int i = 0; i < list.size(); i++) {
                 TextView tv = new TextView(this);
+                tv.setLayoutParams(layoutParams);
                 tv.setText(list.get(i).getClarityKinds());
                 tv.setTextColor(Color.parseColor("#ffffff"));
+                tv.setPadding(20 ,10 ,20,10);
+                if (list.get(i).getDefaultClarity() == 1){
+                    changeClarity.setText(list.get(i).getClarityKinds());
+                    Drawable drawable = ContextCompat.getDrawable(this ,R.drawable.background_textview);
+                    tv.setBackground(drawable);
+                }
                 changeClarityLayout.addView(tv);
             }
         }
+
+        for (int j = 0 ; j < changeClarityLayout.getChildCount(); j++) {
+            final int finalJ = j;
+            changeClarityLayout.getChildAt(j).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Log.e("finalj","j::"+finalJ);
+                    Drawable drawable = ContextCompat.getDrawable(Main2Activity.this ,R.drawable.background_textview);
+                    v.setBackground(drawable);
+                    for (int i = 0; i < changeClarityLayout.getChildCount(); i++) {
+                        if (finalJ != i){
+                            /*Drawable drawableNull = ContextCompat.getDrawable(Main2Activity.this ,null);
+                            v.setBackground(drawable);*/
+                            changeClarityLayout.getChildAt(i).setBackground(null);
+                        }
+                    }
+                    changClarity(finalJ);
+                }
+            });
+        }
+    }
+    private void changClarity(int i){
+        currentP =  vView.getCurrentPosition();
+        vView.setVideoPath(list.get(i).getVideoPath());
+        vView.start();
+        new Handler().postDelayed(new Runnable(){
+            public void run() {
+                //execute the task
+                Log.e("handler","延迟执行");
+                vView.seekTo(Main2Activity.currentP);
+            }
+        }, 500);
     }
 
     private void initOption() {
@@ -516,12 +568,12 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
 
         shareLayout = (RelativeLayout) findViewById(R.id.layout_share_to);
         changeClarityLayout = (LinearLayout) findViewById(R.id.layout_change_clarity);
-        lowClarity = (TextView) findViewById(R.id.low_clarity);
+        /*lowClarity = (TextView) findViewById(R.id.low_clarity);
         lowClarity.setOnClickListener(l);
         midClarity = (TextView) findViewById(R.id.middle_clarity);
         midClarity.setOnClickListener(l);
         highClarity = (TextView) findViewById(R.id.high_clarity);
-        highClarity.setOnClickListener(l);
+        highClarity.setOnClickListener(l);*/
         screenLock = (ImageView) findViewById(R.id.lock_touch);
         screenLock.setOnClickListener(l);
 
@@ -535,6 +587,25 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
 
         netWarnLayout = (RelativeLayout) findViewById(R.id.net_changed_warn);
         replayLayout = (RelativeLayout) findViewById(R.id.replay_layout);
+        rView = (RecyclerView) findViewById(R.id.relative_video_recyclerview);
+        GridLayoutManager mgr = new GridLayoutManager(this, 2);
+        rView.setLayoutManager(mgr);
+        recyclerGridViewAdapter = new RecyclerGridViewAdapter(this, data, imgdata);
+        rView.setAdapter(recyclerGridViewAdapter);
+        onRecyclerItemClickListener();
+    }
+    private void onRecyclerItemClickListener() {
+        recyclerGridViewAdapter.setOnRecyclerViewItemListener(new RecyclerGridViewAdapter.OnRecyclerViewItemListener() {
+            @Override
+            public void onItemClickListener(View view, int position) {
+                Toast.makeText(Main2Activity.this, "onClick:" + position, Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onItemLongClickListener(View view, int position) {
+                Toast.makeText(Main2Activity.this, "onLongClick:" + position, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     //获取有几种不同的清晰度
@@ -767,7 +838,7 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
                         clarityShow = true;
                     }
                     break;
-                case R.id.low_clarity:
+                /*case R.id.low_clarity:
                     changeClar(lowClarity, 0);
                     break;
                 case R.id.middle_clarity:
@@ -775,7 +846,7 @@ public class Main2Activity extends AppCompatActivity implements ViewTreeObserver
                     break;
                 case R.id.high_clarity:
                     changeClar(highClarity, 2);
-                    break;
+                    break;*/
 
                 case R.id.replay_button:
                     vView.start();

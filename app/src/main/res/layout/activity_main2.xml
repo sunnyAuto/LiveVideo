@@ -263,7 +263,15 @@
             </RelativeLayout>
         </com.sunxiao.mathapplication.View.VideoGestureRelativeLayout>
 
-        <include layout="@layout/layout_change_clarity"/>
+        <!--<include layout="@layout/layout_change_clarity"/>-->
+        <LinearLayout android:id="@+id/layout_change_clarity"
+                      android:layout_width="match_parent"
+                      android:layout_height="200dp"
+                      android:layout_centerInParent="true"
+                      android:orientation="vertical"
+                      android:gravity="center"
+                      android:visibility="gone">
+            </LinearLayout>
     </RelativeLayout>
 
     <RelativeLayout
@@ -317,12 +325,21 @@
             android:layout_below="@+id/artical_publish_time"
             android:text="开启悬浮窗2"
             android:visibility="gone"/>
-
-        <GridView
+        <View
+            android:id="@+id/divide_line"
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:background="#F0F0F0"
+            android:layout_below="@+id/start_flow2"
+            android:layout_marginTop="13dp"/>
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/relative_video_recyclerview"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_below="@+id/start_flow2"
-            />
+            android:layout_below="@+id/divide_line"
+            android:layout_marginTop="18dp"/>
+
+
     </RelativeLayout>
 
 

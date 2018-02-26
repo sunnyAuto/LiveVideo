@@ -60,5 +60,6 @@ dependencies {
     compile 'com.longtailvideo.jwplayer:jwplayer-common:+'
     compile 'com.longtailvideo.jwplayer:jwplayer-ima:+'
     compile 'com.longtailvideo.jwplayer:jwplayer-chromecast:+'
+    compile 'com.android.support:recyclerview-v7:25.2.1'
     testCompile 'junit:junit:4.12'
 }
