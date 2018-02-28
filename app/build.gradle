@@ -38,17 +38,10 @@ dependencies {
     compile files('libs/pldroid-player-2.0.3.jar')
     //bilibili
     //required, enough for most devices.
-    
-
     //jwplayer
     // Only required if using IMA features
     // Only required if using Chromecast
-    compile project(
-
-
-    ':superplayerlibrary')
-
-
+    compile project(':superplayerlibrary')
     compile 'com.android.support:appcompat-v7:25.3.0'
     compile 'com.android.support:support-v4:25.3.0'
     compile 'com.android.support.constraint:constraint-layout:1.0.0-beta4'

@@ -46,7 +46,7 @@ public class RecyclerGridViewAdapter extends RecyclerView.Adapter<RecyclerGridVi
     //该方法返回是ViewHolder，当有可复用View时，就不再调用
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
-        View v = inf.inflate(R.layout.video_internetlog_recycler_item, viewGroup, false);
+        View v = inf.inflate(R.layout.video_recycler_item, viewGroup, false);
         return new ViewHolder(v);
     }
 
